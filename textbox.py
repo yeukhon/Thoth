@@ -30,7 +30,7 @@ class TextBox():
         self.str_content = ""
         self.text_content = Text(self.frame, undo=True, bg='#333', fg='#FFF',
             insertbackground='#FFF', selectbackground='#3399FF',
-            selectforeground='#FFF', relief=FLAT, bd=0)
+            selectforeground='#FFF', relief=FLAT, bd=0, wrap=WORD)
         self.text_content.pack(side=LEFT, fill='both', expand=1)
 
         # The vertical scrollbar.
@@ -58,12 +58,13 @@ class TextBox():
         # Events:
         self.update_line_numbers()
 
-        self.text_content.insert('1.0',"""Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce vitae nulla velit. Sed et libero ante, et hendrerit purus. Morbi volutpat porttitor eros id congue. Mauris congue, mi blandit vulputate lobortis, turpis tellus cursus felis, et venenatis arcu mi vel metus. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin in risus eget urna porta sagittis. Suspendisse accumsan, nulla a lobortis tincidunt, lorem massa rhoncus erat, id rutrum magna mauris id odio. Aliquam id urna tellus. Aliquam est mi, convallis sodales gravida vitae, iaculis sed felis. Ut ultricies varius eros at egestas. Pellentesque ac enim eget arcu aliquet cursus eget sit amet nunc. Mauris eu elit enim. Phasellus volutpat ligula at quam ullamcorper ultrices et sed nisl. Quisque nisi tellus, blandit ullamcorper fringilla vel, fringilla vel ante. Aenean lectus justo, imperdiet a tempus sed, vulputate fermentum felis.
-
-Aliquam erat volutpat. Duis justo enim, luctus eu faucibus sit amet, ultrices et tortor. Etiam feugiat justo sit amet turpis tristique tempus. Aenean non libero sed massa scelerisque tempor. Morbi suscipit, magna et aliquam tristique, ante lectus euismod purus, nec pulvinar felis purus in turpis. Aliquam erat volutpat. Maecenas in nibh tortor. Vivamus id lacus arcu, ut elementum orci. Sed fringilla, metus ac varius pretium, turpis est cursus purus, et pellentesque sapien nisi facilisis purus. Sed viverra, dolor non auctor dapibus, sem felis tristique lacus, sit amet pellentesque nulla turpis sed massa. Curabitur congue urna at ante semper non luctus felis varius. Curabitur nisl libero, lacinia vel pretium at, ornare et dolor. Quisque commodo luctus nisl non dictum.""")
+        self.text_content.insert('1.0',"""Thoth was considered one of the more important deities of the Egyptian pantheon. In art, he was often depicted as a man with the head of an ibis or a baboon, animals sacred to him. As in the main picture, Thoth is almost always shown holding a Was (a wand or rod symbolizing power) in one hand and an Ankh (the key of the Nile symbolizing life) in the other hand. His feminine counterpart was Seshat.
+Thoth's chief temple was located in the city of Khmun, later renamed Hermopolis Magna during the Greco-Roman era (in reference to him through the Greeks' interpretation that he was the same as their god Hermes) and Eshmunen in the Coptic rendering. In that city, he led the Ogdoad pantheon of eight principal deities. He also had numerous shrines within the cities of Abydos, Hesert, Urit, Per-Ab, Rekhui, Ta-ur, Sep, Hat, Pselket, Talmsis, Antcha-Mutet, Bah, Amen-heri-ab, and Ta-kens.
+Thoth played many vital and prominent roles in Egyptian mythology, such as maintaining the universe, and being one of the two deities (the other being Ma'at, who was also his wife) who stood on either side of Ra's boat. In the later history of ancient Egypt, Thoth became heavily associated with the arbitration of godly disputes, the arts of magic, the system of writing, the development of science, and the judgment of the dead.""")
 
         self.create_autocompleteDB(self.text_content.get('1.0', END))
         self.correct_words = open('dbs/words').read().split('\n')
+        self.declare_misspell()
 
         self.ac_ideal = ''
         self.text_content.bind("<Any-KeyPress>", self.handle_keypress)
@@ -139,17 +140,28 @@ Aliquam erat volutpat. Duis justo enim, luctus eu faucibus sit amet, ultrices et
         return
 
     def set_ideal(self, char, verbose=False):
-        line, col = self.text_content.index(INSERT).split(".")
+        # Get the fragment of the word the user already typed. Assumes that
+        # the insertion cursor is at the end of the word, so wordstart needs
+        # the cursor to be in the word, hence the '-1c'. There is a delay
+        # between when the key is pressed and the box is updated.
         fragment = self.text_content.get(
-            '%s.%s wordstart' % (line, int(col)-1), INSERT) + char
+            'insert-1c wordstart', INSERT) + char
 
-        if verbose: print 'Fragment:', fragment
+        # Fragment must be at least 3 characters in length for a suggestion to
+        # be given. Fragment must not contain any punctuation.
         if len(fragment) > 2 and re.match('\w+', fragment):
             if verbose: print 'Fragment:', fragment
 
+            # Get a list of the suggested words, sorted, so the shortest word
+            # will be at the beginning of the list.
             sug = sorted(self.suggest_autocomplete(fragment))
+            if verbose: print ''.join(sug)
+
+            # There is at least 1 suggestion.
             if len(sug) > 0:
                 if verbose: print 'Suggest:', sug[0]
+                # Fragment must not be the same as suggestion for a new
+                # suggestion to be made.
                 if fragment != sug[0]:
                     if verbose: print 'Insert:', sug[0][len(fragment):]
                     curr = self.text_content.index(INSERT)
@@ -165,8 +177,6 @@ Aliquam erat volutpat. Duis justo enim, luctus eu faucibus sit amet, ultrices et
         return
 
     def handle_keypress(self, event, verbose=False):
-        if verbose: print 'Starting handle_keypress() w/', event.char
-
         # User pressed the spacebar.
         if event.char == ' ':
             # Add a separator on the undo/redo stack.
@@ -176,43 +186,51 @@ Aliquam erat volutpat. Duis justo enim, luctus eu faucibus sit amet, ultrices et
             if self.ac_ideal != '':
                 # Delete the exisitng autocomplete word from the box.
                 self.text_content.delete(
-                    INSERT,
-                    '%s+%dc' % (INSERT, len(self.ac_ideal)))
+                    INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
 
                 # Delete the exisitng autocomplete word.
                 self.ac_ideal = ''
+            # Check whether the last word is misspelled.
+            self.handle_misspell(verbose=True)
 
-            self.declare_misspell()
         # User pressed the return key.
         elif event.keysym == 'Return':
             # There exist a autocomplete word.
             if self.ac_ideal != '':
+                # Move the insertion cursor to after the word.
                 self.text_content.mark_set(
-                    INSERT,
-                    '%s+%dc' % (INSERT, len(self.ac_ideal)))
+                    INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
+                # Reset the ideal autocomplete word.
                 self.ac_ideal = ''
 
-                self.text_content.delete(INSERT)
-
+                # Nulls the newline character from the 'Return' keystroke.
                 return "break"
+
+        # User pressed a character key.
         elif re.match('\w', event.char):
+            # There does not exist an autocomplete word.
             if self.ac_ideal == '':
-                self.set_ideal(event.char, True)
+                # Look for a new autocomplete word.
+                self.set_ideal(event.char, verbose=True)
+            # There exist an autocomplete word.
             else:
+                # User typed in the next character of autocomplete word.
                 if event.char == self.ac_ideal[0]:
+                    # Delete the 1st character from the autocomplete word.
                     self.ac_ideal = self.ac_ideal[1:]
+                    # Delete the redundant character from the box.
+                    self.text_content.delete(INSERT)
+                # User is not typing the autocomplete word.
                 else:
-                    # Get the current position of the insert cursor.
-                    line, col = self.text_content.index(INSERT).split('.')
+                    # Delete the autocomplete word from the box.
                     self.text_content.delete(
-                        INSERT,
-                        '%s.%s' % (line, int(col) + len(self.ac_ideal)))
+                        INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
+                    # Reset the autocomplete word.
                     self.ac_ideal = ''
 
-        if verbose: print 'Exiting handle_keypress()'
         return
 
-    def declare_misspell(self):
+    def handle_misspell(self, verbose=False):
         index = self.text_content.search(r'\s', INSERT, backwards=True, regexp=True)
 
         if index == "":
@@ -220,11 +238,30 @@ Aliquam erat volutpat. Duis justo enim, luctus eu faucibus sit amet, ultrices et
         else:
             index = self.text_content.index("%s+1c" % index)
 
-        word = self.text_content.get(index, INSERT)
-        if word.encode('utf-8') in self.correct_words:
+        word = re.sub('[^\w]+', '', self.text_content.get(index, INSERT).encode('utf-8')).lower()
+
+        if verbose: print 'Index:', index, '\tWord:', word
+
+        if word in self.correct_words:
             self.text_content.tag_remove("misspelled", index, "%s+%dc" % (index, len(word)))
         else:
             self.text_content.tag_add("misspelled", index, "%s+%dc" % (index, len(word)))
+
+        return
+
+    def declare_misspell(self):
+        words = sorted(list(set(re.findall('\w+', self.text_content.get('1.0', END)))))
+
+        for word in words:
+            word = word.encode('utf-8').lower()
+            if word not in self.correct_words:
+                start = '1.0'
+                index = self.text_content.search('[^\w]%s[^\w]' % (word), start, stopindex=END, regexp=True, nocase=1)+'+1c'
+                while index != '+1c':
+                    self.text_content.tag_add("misspelled", index, "%s+%dc" % (index, len(word)))
+                    start = '%s+%dc' % (index, len(word))
+                    index = self.text_content.search(
+                        '[^\w]%s[^\w]' % (word), start, stopindex=END, regexp=True, nocase=1)+'+1c'
 
         return
 
