@@ -93,33 +93,36 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
         self.max_line = 0
 
         # Divide the height of the text widget that contains the contents by
-        # approximately the font height, i.e. for every line in the text widget.
+        # approximately the font height, i.e. for every line in the text
+        # widget.
         for div in range(0,self.text_content.winfo_height(), self.font_height):
-            # Get the line and column number of the 1st character in every line
-            # in the text widget. Each line in the text widget does not
+            # Get the line and column number of the 1st character in every
+            # line in the text widget. Each line in the text widget does not
             # correalate to a actual line of text because the text in a text
             # widget can be wrapped.
             line, column = self.text_content.index(search % div).split('.')
 
-            # If the current line number in our numbering is equal to the found
-            # line number:
+            # If the current line number in our numbering is equal to the
+            # found line number:
             if curr_line == line:
-                # If the current column number in our numbering is not equal to
-                # the found column number, i.e. the line is wrapped:
+                # If the current column number in our numbering is not equal
+                # to the found column number, i.e. the line is wrapped:
                 if curr_column != column:
-                    # Set our current column number to the found column number.
+                    # Set our current column number to the found column
+                    # number.
                     curr_column = column
                     # Since we have found that the line is wrapped, the no new
-                    # line number needs to be added, instead we append a newline
-                    # character to the line numbering string.
+                    # line number needs to be added, instead we append a
+                    # newline character to the line numbering string.
                     temp_str_ln += '\n'
-            # Else the current line number in our numbering is not equal to the
-            # found line number, i.e. we have encountered a new line.
+            # Else the current line number in our numbering is not equal to
+            # the found line number, i.e. we have encountered a new line.
             else:
                 # Set the current line and column numbers to the ones found in
                 # the search.
                 curr_line, curr_column = line, column
-                # Add the curren line number to our main line numbering string.
+                # Add the curren line number to our main line numbering
+                # string.
                 temp_str_ln += flavor % curr_line
 
         # Save the max line number in the current window.
@@ -137,7 +140,8 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
 
             self.text_ln.config(state='disabled')
 
-        self.text_content.after(self.update_interval, self.update_line_numbers)
+        self.text_content.after(
+            self.update_interval, self.update_line_numbers)
 
         return
 
@@ -222,7 +226,7 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
                 self.ac_ideal = ''
 
             # Check whether the last word is misspelled.
-            self.handle_misspell(verbose=True)
+            self.handle_misspell(verbose=False)
 
         # User pressed the return key.
         elif event.keysym == 'Return':
@@ -255,14 +259,14 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
                 # Reset the autocomplete word.
                 self.ac_ideal = ''
                 # Look for a new autocomplete word.
-                self.set_ideal('', verbose=True)
+                self.set_ideal('', verbose=False)
 
         # User pressed a character key.
         elif re.match('\w', event.char):
             # There does not exist an autocomplete word.
             if self.ac_ideal == '':
                 # Look for a new autocomplete word.
-                self.set_ideal(event.char, verbose=True)
+                self.set_ideal(event.char, verbose=False)
             # There exist an autocomplete word.
             else:
                 # User typed in the next character of autocomplete word.
@@ -275,7 +279,7 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
 
                     if self.ac_ideal == '':
                          # Look for a new autocomplete word.
-                        self.set_ideal(event.char, verbose=True)
+                        self.set_ideal(event.char, verbose=False)
 
                 # User is not typing the autocomplete word.
                 else:
@@ -289,7 +293,16 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
                     # Reset the autocomplete word.
                     self.ac_ideal = ''
                     # Look for a new autocomplete word.
-                    self.set_ideal(event.char, verbose=True)
+                    self.set_ideal(event.char, verbose=False)
+        else:
+            # There exist a autocomplete word.
+            if self.ac_ideal != '':
+                self.text_content.tag_remove(
+                    "autocomplete",
+                    INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
+
+                # Reset the autocomplete word.
+                self.ac_ideal = ''
 
         return
 
