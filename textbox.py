@@ -1,4 +1,5 @@
 from Tkinter import *
+import tkFont
 import os
 from sqlite3 import connect
 import re
@@ -46,13 +47,18 @@ class TextBox():
         self.font_family = "Helvetica"
         self.font_height = 12
         self.font_style  = "normal"
+        self.font_slant  = "italic"
+        self.font_misspell = tkFont.Font(
+            family=self.font_family, size=self.font_height,
+            slant=self.font_slant)
 
         self.font = (self.font_family, self.font_height, self.font_style)
         self.text_ln.config(font=self.font)
         self.text_content.config(font=self.font)
 
         self.text_content.tag_configure("bold", font=(self.font_family, self.font_height, "bold"))
-        self.text_content.tag_configure("misspelled", foreground="red", underline=True)
+        self.text_content.tag_configure("misspelled", font=self.font_misspell, foreground="red", underline=1)
+        self.text_content.tag_configure("autocomplete", background="#0000ff")
 
 
         # Events:
@@ -140,39 +146,59 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
         return
 
     def set_ideal(self, char, verbose=False):
-        # Get the fragment of the word the user already typed. Assumes that
-        # the insertion cursor is at the end of the word, so wordstart needs
-        # the cursor to be in the word, hence the '-1c'. There is a delay
-        # between when the key is pressed and the box is updated.
-        fragment = self.text_content.get(
-            'insert-1c wordstart', INSERT) + char
+        # User deleted a character, so there does not exist a new character;
+        # however, the box will not immediately show the change.
+        if char == '':
+            # Get the fragment of the word the user already typed. There is a
+            # delay between when the key is pressed and the box is updated.
+            fragment = self.text_content.get(
+                'insert-1c wordstart', 'insert-1c')
+        # User typed a ASCII character.
+        else:
+            # Get the fragment of the word the user already typed. Assumes
+            # that the insertion cursor is at the end of the word, so
+            # wordstart needs the cursor to be in the word, hence the '-1c'.
+            # There is a delay between when the key is pressed and the box is
+            # updated.
+            fragment = self.text_content.get(
+                'insert-1c wordstart', INSERT) + char
 
         # Fragment must be at least 3 characters in length for a suggestion to
         # be given. Fragment must not contain any punctuation.
         if len(fragment) > 2 and re.match('\w+', fragment):
             if verbose: print 'Fragment:', fragment
 
-            # Get a list of the suggested words, sorted, so the shortest word
+            # Get the suggested word, sorted, so the shortest word
             # will be at the beginning of the list.
-            sug = sorted(self.suggest_autocomplete(fragment))
-            if verbose: print ''.join(sug)
+            sug = self.suggest_autocomplete(fragment)
 
-            # There is at least 1 suggestion.
-            if len(sug) > 0:
-                if verbose: print 'Suggest:', sug[0]
+            # There is a suggestion.
+            if sug != '':
+                if verbose: print 'Suggestion:', sug
                 # Fragment must not be the same as suggestion for a new
                 # suggestion to be made.
-                if fragment != sug[0]:
-                    if verbose: print 'Insert:', sug[0][len(fragment):]
+                if fragment != sug:
+                    if verbose: print 'Insertion Fragment:', sug[len(fragment):]
+
+                    # Save the index of the insertion cursor.
                     curr = self.text_content.index(INSERT)
-                    self.ac_ideal = sug[0][len(fragment):]
+                    # Set the autocomplete word to the portion that still
+                    # needs to be typed.
+                    self.ac_ideal = sug[len(fragment):]
 
+                    # Insert the portion that still needs to be typed into the
+                    # box.
                     self.text_content.insert(
-                        INSERT,
-                        self.ac_ideal)
+                        INSERT, self.ac_ideal)
+
+                    self.text_content.tag_add(
+                        "autocomplete",
+                        '%s-%dc' % (INSERT, len(self.ac_ideal)),
+                        INSERT)
+
+                    # Set the position of the insertion cursor to the saved
+                    # position.
                     self.text_content.mark_set(INSERT, curr)
-
-
 
         return
 
@@ -184,12 +210,17 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
 
             # There exist a autocomplete word.
             if self.ac_ideal != '':
+                self.text_content.tag_remove(
+                    "autocomplete",
+                    INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
+
                 # Delete the exisitng autocomplete word from the box.
                 self.text_content.delete(
                     INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
 
                 # Delete the exisitng autocomplete word.
                 self.ac_ideal = ''
+
             # Check whether the last word is misspelled.
             self.handle_misspell(verbose=True)
 
@@ -197,6 +228,10 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
         elif event.keysym == 'Return':
             # There exist a autocomplete word.
             if self.ac_ideal != '':
+                self.text_content.tag_remove(
+                    "autocomplete",
+                    INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
+
                 # Move the insertion cursor to after the word.
                 self.text_content.mark_set(
                     INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
@@ -205,6 +240,22 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
 
                 # Nulls the newline character from the 'Return' keystroke.
                 return "break"
+
+        # User pressed the backspace key.
+        elif event.keysym == 'BackSpace':
+            # There exist a autocomplete word.
+            if self.ac_ideal != '':
+                self.text_content.tag_remove(
+                    "autocomplete",
+                    INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
+
+                # Delete the autocomplete word from the box.
+                self.text_content.delete(
+                    INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
+                # Reset the autocomplete word.
+                self.ac_ideal = ''
+                # Look for a new autocomplete word.
+                self.set_ideal('', verbose=True)
 
         # User pressed a character key.
         elif re.match('\w', event.char):
@@ -218,87 +269,185 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
                 if event.char == self.ac_ideal[0]:
                     # Delete the 1st character from the autocomplete word.
                     self.ac_ideal = self.ac_ideal[1:]
+
                     # Delete the redundant character from the box.
                     self.text_content.delete(INSERT)
+
+                    if self.ac_ideal == '':
+                         # Look for a new autocomplete word.
+                        self.set_ideal(event.char, verbose=True)
+
                 # User is not typing the autocomplete word.
                 else:
+                    self.text_content.tag_remove(
+                        "autocomplete",
+                        INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
+
                     # Delete the autocomplete word from the box.
                     self.text_content.delete(
                         INSERT, '%s+%dc' % (INSERT, len(self.ac_ideal)))
                     # Reset the autocomplete word.
                     self.ac_ideal = ''
+                    # Look for a new autocomplete word.
+                    self.set_ideal(event.char, verbose=True)
 
         return
 
     def handle_misspell(self, verbose=False):
-        index = self.text_content.search(r'\s', INSERT, backwards=True, regexp=True)
+        # Get the beginning index of the currently typed word.
+        index = self.text_content.index('insert-1c wordstart')
 
-        if index == "":
-            index ="1.0"
-        else:
-            index = self.text_content.index("%s+1c" % index)
-
-        word = re.sub('[^\w]+', '', self.text_content.get(index, INSERT).encode('utf-8')).lower()
-
+        # Get the word from the starting index to the insertion cursor. Remove
+        # punctuation from the word. Force the word to lowercase.
+        word = re.sub('[^\w]+', '',
+            self.text_content.get(index, INSERT).encode('utf-8')).lower()
         if verbose: print 'Index:', index, '\tWord:', word
 
+        # The word is valid.
         if word in self.correct_words:
-            self.text_content.tag_remove("misspelled", index, "%s+%dc" % (index, len(word)))
+            # Remove the underline tags.
+            self.text_content.tag_remove(
+                "misspelled", index, "%s+%dc" % (index, len(word)))
+
+            self.add_autocompleteDB(word)
+
+        # The word is not valid.
         else:
-            self.text_content.tag_add("misspelled", index, "%s+%dc" % (index, len(word)))
+            # Add the underline tags.
+            self.text_content.tag_add(
+                "misspelled", index, "%s+%dc" % (index, len(word)))
 
         return
 
-    def declare_misspell(self):
-        words = sorted(list(set(re.findall('\w+', self.text_content.get('1.0', END)))))
+    def declare_misspell(self, verbose=False):
+        # Get the contents of the box. Split the contents into words. Create
+        # a set out of the list of words to remove redundant words. Create a
+        # list out of the set for indexing purposes. Sort the list of words.
+        words = sorted(list(set(re.findall(
+            '\w+', self.text_content.get('1.0', END)))))
+        if verbose: print 'Number of unique words:', len(words)
 
         for word in words:
+            # Words in the dictionary are unicode, so convert the query word
+            # to unicode. Force the word to lowercase.
             word = word.encode('utf-8').lower()
+            if verbose: print 'Query Word:', word
+
+            # The query word is not in the dictionary of valid words.
             if word not in self.correct_words:
+                # Start searching for the query word in the box at '1.0'
                 start = '1.0'
-                index = self.text_content.search('[^\w]%s[^\w]' % (word), start, stopindex=END, regexp=True, nocase=1)+'+1c'
+                # Find the first index of the query word in the box. The query
+                # word must begin and end with a non-word character. Search is
+                # done from the starting index to the ending index of the box.
+                index = self.text_content.search(
+                    '[^\w]%s[^\w]' % (word), start, stopindex=END,
+                    regexp=True, nocase=1)+'+1c'
+
+                # While the query word can be found in the box.
                 while index != '+1c':
-                    self.text_content.tag_add("misspelled", index, "%s+%dc" % (index, len(word)))
+                    if verbose: print 'Misspelled Word Index:', index
+
+                    # Add the underline tag.
+                    self.text_content.tag_add(
+                        "misspelled", index, "%s+%dc" % (index, len(word)))
+
+                    # New starting index is the end of the current word.
                     start = '%s+%dc' % (index, len(word))
+                    # Find the next index of the query word in the box. The
+                    # query word must begin and end with a non-word character.
+                    # Search is done from the starting index to the ending
+                    # index of the box.
                     index = self.text_content.search(
-                        '[^\w]%s[^\w]' % (word), start, stopindex=END, regexp=True, nocase=1)+'+1c'
+                        '[^\w]%s[^\w]' % (word), start, stopindex=END,
+                        regexp=True, nocase=1)+'+1c'
 
         return
 
 
     def create_autocompleteDB(self, content):
-#        if not os.path.exists(self.BASE_DIR+'/autocomplete.db'):
+        # Create a new autocomplete database.
         f = open(self.BASE_DIR+'/autocomplete.db', 'w')
         f.close()
 
+        # Create a connection to the autocomplete database.
         conn = connect(self.BASE_DIR+'/autocomplete.db')
+        # Create a cursor to the autocomplete database.
         c = conn.cursor()
 
-
+        # Create the autocomplete table.
         c.execute("""create table autocomplete (
             id integer primary key autoincrement,
             word text)""")
 
+        # Find all the words in the provided content.
         words = re.findall('\w+', content.lower())
+
         for word in words:
+            # Only words with a length greater than 3 character will be used
+            # as suggestions.
             if len(word) > 3:
+                # Insert the word into the autocomplete table.
                 conn.execute("""insert into autocomplete values (
                     NULL, ?)""", (word,))
 
+        # Commit the changes to the autocomplete database.
         conn.commit()
+        # Close the connection to the autocomplete database.
+        conn.close()
+        return
+
+    def add_autocompleteDB(self, word):
+        # Create a connection to the autocomplete database.
+        conn = connect(self.BASE_DIR+'/autocomplete.db')
+        # Create a cursor to the autocomplete database.
+        c = conn.cursor()
+
+        # Search for the word.
+        c.execute("""select * from autocomplete where
+            word=?""",
+            (word,))
+
+        # Get 1 result.
+        res = c.fetchone()
+
+        # The result does not exist.
+        if not res:
+            c.execute("""insert into autocomplete values(
+                NULL, ?)""", (word,))
+
+            # Commit the changes to the autocomplete database.
+            conn.commit()
+
+        # Close the connection to the autocomplete database.
+        conn.close()
         return
 
     def suggest_autocomplete(self, fragment):
+         # Create a connection to the autocomplete database.
         conn = connect(self.BASE_DIR+'/autocomplete.db')
+        # Create a cursor to the autocomplete database.
         c = conn.cursor()
 
-        c.execute("""select * from autocomplete where word Like ?""", (fragment+'%',))
+        # Search for the query fragment and get only 1 result order ascending.
+        c.execute("""select word from autocomplete where
+            word Like ? and word != ?
+            order by word asc
+            limit 1""",
+            (fragment+'%', fragment))
 
-        res = []
-        for row in c:
-            res.append(row[1])
+        # Get 1 result.
+        res = c.fetchone()
 
-        return res
+        # Close the connection to the autocomplete database.
+        conn.close()
+
+        # The result exist.
+        if res:
+            return res[0]
+        # The result does not exist.
+        else:
+            return ''
 
 if __name__ == "__main__":
     root = Tk()
