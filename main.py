@@ -17,14 +17,14 @@ class TEditor(Frame):
         self.master.title("TEditor")
 
 
-        self.init_menus()
-        self.init_textbox()
+#        self.init_menus()
+#        self.init_textbox()
 
-#        self.user = User(2)
-#        self.main_GUI = Homepage(self, self.user)
-#        self.main_GUI.frame.grid(row=0, column=0, sticky=N+E+S+W)
-#        self.columnconfigure(0, weight=1)
-#        self.rowconfigure(0, weight=1)
+        self.user = User(1)
+        self.main_GUI = Homepage(self, self.user)
+        self.main_GUI.frame.grid(row=0, column=0, sticky=N+E+S+W)
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
         return
 
     def init_menus(self):

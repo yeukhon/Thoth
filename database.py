@@ -312,8 +312,11 @@ class DBManager():
         c.execute("""select * from user where id=?""", (userid,))
         row = c.fetchone()
 
-        res = {'id': row[0], 'username': row[1], 'password': row[2],
+        if row:
+            res = {'id': row[0], 'username': row[1], 'password': row[2],
             'email': row[3], 'usergroup': row[4], 'infraction': row[5]}
+        else:
+            res = {}
 
         c.close()
         conn.close()
@@ -565,6 +568,7 @@ class DBManager():
 
         # Create the member table with the appropriate fields.
         c.execute("""create table member (
+            id integer primary key autoincrement,
             userid integer,
             docid integer
         )""")

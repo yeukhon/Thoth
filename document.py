@@ -26,6 +26,17 @@ class Document:
             self.info['id'])
         return
 
+    def is_memeber(self, userid):
+        self.c.execute("""select * from member where
+            docid=? and userid=?""",
+            (self.info['id'], userid))
+        res = self.c.fetchone()
+
+        if res:
+            return True
+        else:
+            return False
+
     def get_invitation_id(self, userid_from, userid_to):
         self.c.execute("""select id from invitation where
             docid=? and userid_from=? and userid_to=?""",

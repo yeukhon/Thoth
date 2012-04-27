@@ -2,7 +2,7 @@ from Tkinter import *
 import tkFont
 import os
 from sqlite3 import connect
-import re
+import re, string
 
 
 class TextBox():
@@ -64,13 +64,13 @@ class TextBox():
         # Events:
         self.update_line_numbers()
 
-        self.text_content.insert('1.0',"""Thoth was considered one of the more important deities of the Egyptian pantheon. In art, he was often depicted as a man with the head of an ibis or a baboon, animals sacred to him. As in the main picture, Thoth is almost always shown holding a Was (a wand or rod symbolizing power) in one hand and an Ankh (the key of the Nile symbolizing life) in the other hand. His feminine counterpart was Seshat.
-Thoth's chief temple was located in the city of Khmun, later renamed Hermopolis Magna during the Greco-Roman era (in reference to him through the Greeks' interpretation that he was the same as their god Hermes) and Eshmunen in the Coptic rendering. In that city, he led the Ogdoad pantheon of eight principal deities. He also had numerous shrines within the cities of Abydos, Hesert, Urit, Per-Ab, Rekhui, Ta-ur, Sep, Hat, Pselket, Talmsis, Antcha-Mutet, Bah, Amen-heri-ab, and Ta-kens.
-Thoth played many vital and prominent roles in Egyptian mythology, such as maintaining the universe, and being one of the two deities (the other being Ma'at, who was also his wife) who stood on either side of Ra's boat. In the later history of ancient Egypt, Thoth became heavily associated with the arbitration of godly disputes, the arts of magic, the system of writing, the development of science, and the judgment of the dead.""")
+#        self.text_content.insert('1.0',"""Thoth was considered one of the more important deities of the Egyptian pantheon. In art, he was often depicted as a man with the head of an ibis or a baboon, animals sacred to him. As in the main picture, Thoth is almost always shown holding a Was (a wand or rod symbolizing power) in one hand and an Ankh (the key of the Nile symbolizing life) in the other hand. His feminine counterpart was Seshat.
+#Thoth's chief temple was located in the city of Khmun, later renamed Hermopolis Magna during the Greco-Roman era (in reference to him through the Greeks' interpretation that he was the same as their god Hermes) and Eshmunen in the Coptic rendering. In that city, he led the Ogdoad pantheon of eight principal deities. He also had numerous shrines within the cities of Abydos, Hesert, Urit, Per-Ab, Rekhui, Ta-ur, Sep, Hat, Pselket, Talmsis, Antcha-Mutet, Bah, Amen-heri-ab, and Ta-kens.
+#Thoth played many vital and prominent roles in Egyptian mythology, such as maintaining the universe, and being one of the two deities (the other being Ma'at, who was also his wife) who stood on either side of Ra's boat. In the later history of ancient Egypt, Thoth became heavily associated with the arbitration of godly disputes, the arts of magic, the system of writing, the development of science, and the judgment of the dead.""")
 
-        self.create_autocompleteDB(self.text_content.get('1.0', END))
+#        self.create_autocompleteDB(self.text_content.get('1.0', END))
+#        self.declare_misspell()
         self.correct_words = open('dbs/words').read().split('\n')
-        self.declare_misspell()
 
         self.ac_ideal = ''
         self.text_content.bind("<Any-KeyPress>", self.handle_keypress)
@@ -149,6 +149,31 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
         self.text_content.edit_separator()
         return
 
+    def initialize(self, user, document):
+        self.user = user
+        self.document = document
+
+        self.set_content_from_doc(self.document)
+
+        if not self.document.is_memeber(self.user.info['id']):
+            self.text_content.config(state=DISABLED)
+        return
+
+    def set_content_from_doc(self, doc):
+        fhandle = open(doc.info['ppath']+str(doc.info['id']))
+        contents = fhandle.read()
+        fhandle.close()
+
+        self.text_content.insert('1.0', contents)
+
+        self.create_autocompleteDB(self.text_content.get('1.0', END))
+        self.declare_misspell()
+
+        return
+
+    def get_content(self):
+        return self.text_content.get('1.0', END)
+
     def set_ideal(self, char, verbose=False):
         # User deleted a character, so there does not exist a new character;
         # however, the box will not immediately show the change.
@@ -208,7 +233,7 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
 
     def handle_keypress(self, event, verbose=False):
         # User pressed the spacebar.
-        if event.char == ' ':
+        if event.char == ' ' or event.keysym == 'Tab':
             # Add a separator on the undo/redo stack.
             self.text_content.edit_separator()
 
@@ -226,7 +251,7 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
                 self.ac_ideal = ''
 
             # Check whether the last word is misspelled.
-            self.handle_misspell(verbose=False)
+            self.handle_misspell(verbose=True)
 
         # User pressed the return key.
         elif event.keysym == 'Return':
@@ -307,12 +332,18 @@ Thoth played many vital and prominent roles in Egyptian mythology, such as maint
         return
 
     def handle_misspell(self, verbose=False):
-        # Get the beginning index of the currently typed word.
-        index = self.text_content.index('insert-1c wordstart')
+        # There is no punctuation at the end of the word.
+        if re.match('\w', self.text_content.get('insert-1c')):
+            # Get the beginning index of the currently typed word.
+            index = self.text_content.index('insert-1c wordstart')
+        # There is punctuation at the end of the word.
+        else:
+            # Get the beginning index of the currently typed word.
+            index = self.text_content.index('insert-2c wordstart')
 
         # Get the word from the starting index to the insertion cursor. Remove
         # punctuation from the word. Force the word to lowercase.
-        word = re.sub('[^\w]+', '',
+        word = re.sub('[%s]' % re.escape(string.punctuation), '',
             self.text_content.get(index, INSERT).encode('utf-8')).lower()
         if verbose: print 'Index:', index, '\tWord:', word
 

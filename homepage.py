@@ -3,6 +3,9 @@ from user import User
 import tkMessageBox
 from invitation_win import Invitation_Viewer_Window
 from application_win import App_Viewer_Window
+from login_win import Login_Window
+from textbox import TextBox
+from document import Document
 
 
 class Homepage:
@@ -13,6 +16,8 @@ class Homepage:
         self.user.manage_DB.check()
 
         # Child Windows:
+        self.window_login = Login_Window(master, self, self.user)
+        self.window_editor = TextBox(master)
         self.window_invitations = Invitation_Viewer_Window(master, self, self.user)
         self.window_applications = App_Viewer_Window(master, self, self.user)
 
@@ -21,7 +26,9 @@ class Homepage:
 
         self.font = ("Helvetica", "20", "normal")
 
+        self.top = master.winfo_toplevel()
         self.init_frame(master)
+        self.init_menus()
         return
 
     def init_frame(self, master):
@@ -158,6 +165,23 @@ class Homepage:
 
         return
 
+    def init_menus(self):
+        """Initializes the FILE, EDIT, and ABOUT menus."""
+
+        # Create the menubar that will hold all the menus and thier items.
+        self.menubar = Menu(self.frame)
+
+        # File Pulldown menu, contains "Open", "Save", and "Exit" options.
+        self.filemenu = Menu(self.menubar, tearoff=0)
+        if self.user.info['usergroup'] == 4:
+            self.filemenu.add_command(label="Login", command=self.handler_view_login)
+            self.filemenu.add_separator()
+        self.filemenu.add_command(label="Exit", command=self.file_exit)
+        self.menubar.add_cascade(label="File", menu=self.filemenu)
+
+        self.top["menu"] = self.menubar
+        return
+
     def update_directory(self, dirid):
         self.curr_directory = self.user.manage_DB.get_directory_info(dirid)
         self.curr_directory_contents_dir = self.user.manage_Dir.get_dir_dir(
@@ -198,7 +222,8 @@ class Homepage:
                     text=row['name']),
                 Button(self.frame_dir,
                     text='Info',
-                    relief=RAISED)])
+                    relief=RAISED,
+                    command=lambda i=row['id']: self.open_document(i))])
             self.curr_directory_contents[-1][0].grid(
                 row=start, column=0, sticky=N+E+S+W)
             self.curr_directory_contents[-1][1].grid(
@@ -211,6 +236,12 @@ class Homepage:
             text='Directory @ '+curr_dir+':')
         self.frame_create_banner_doc.config(
             text='Document @ '+curr_dir+':')
+        return
+
+    def open_document(self, docid):
+        self.window_editor.initialize(self.user, Document(docid))
+        self.frame.grid_remove()
+        self.window_editor.frame.grid()
         return
 
     def handler_directory_up(self):
@@ -258,6 +289,18 @@ class Homepage:
     def handler_view_invitations(self):
         self.frame.grid_remove()
         self.window_invitations.frame.grid()
+        return
+
+    def handler_view_login(self):
+        self.top["menu"] = 0
+        self.frame.grid_remove()
+        self.window_login.frame.grid()
+        return
+
+    def file_exit(self):
+        """Clean-up before exiting a file."""
+
+        self.quit()
         return
 
 if __name__ == "__main__":
