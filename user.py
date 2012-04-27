@@ -3,6 +3,7 @@ from document import DocumentManager
 from directory import DirectoryManager
 from sqlite3 import connect
 from datetime import datetime
+from md5 import new
 
 
 class User:
@@ -14,6 +15,10 @@ class User:
         self.manage_Docs = DocumentManager()
         self.manage_Dir = DirectoryManager()
 
+        self.info = self.manage_DB.get_user_info(userid)
+        return
+
+    def update_user(self, userid):
         self.info = self.manage_DB.get_user_info(userid)
         return
 
@@ -100,7 +105,7 @@ class UserManager:
         if userid[0]:
             return False, userid[1]
 
-        t = (username, password, email, group)
+        t = (username, new(password).hexdigest(), email, group)
         self.c.execute("""insert into user values (NULL, ?, ?, ?, ?, 0)""", t)
 
         self.conn.commit()
@@ -120,9 +125,9 @@ class UserManager:
         return self.get_usergroup_id(name)
 
     def user_in_DB(self, username, password):
-        t = (username, password)
+        t = (username, new(password).hexdigest())
         self.c.execute("""select id from user where
-            username=? and password=?""",
+            lower(username)=? and password=?""",
             t)
         res = self.c.fetchall()
         if len(res) == 1:
