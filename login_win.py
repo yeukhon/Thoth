@@ -1,7 +1,7 @@
 from Tkinter import *
 from sqlite3 import connect
 from user import User
-
+from md5 import new
 
 class Login_Window:
     BASE_DIR = 'dbs'
@@ -58,8 +58,8 @@ class Login_Window:
         res = self.user.manage_User.user_in_DB(
             self.username.get(), self.password.get())
 
-        if res:
-            self.parent.user = User(int(res[1]))
+        if res[0]:
+            self.parent.user.update_user(res[1])
             self.handler_goto_homepage()
         else:
             self.password.set('')

@@ -27,6 +27,9 @@ class Document:
         return
 
     def is_memeber(self, userid):
+        if self.info['owner'] == userid:
+            return True
+
         self.c.execute("""select * from member where
             docid=? and userid=?""",
             (self.info['id'], userid))

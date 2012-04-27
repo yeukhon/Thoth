@@ -75,6 +75,8 @@ class TextBox():
         self.ac_ideal = ''
         self.text_content.bind("<Any-KeyPress>", self.handle_keypress)
 
+        self.top = master.winfo_toplevel()
+
         return
 
     def get_line_numbers(self):
@@ -145,6 +147,21 @@ class TextBox():
 
         return
 
+    def init_menus(self):
+        # Create the menubar that will hold all the menus and thier items.
+        self.menubar = Menu(self.frame)
+
+        # File Pulldown menu, contains "Open", "Save", and "Exit" options.
+        self.filemenu = Menu(self.menubar, tearoff=0)
+        if self.document.is_memeber(self.user.info['id']):
+            self.filemenu.add_command(label="Save", command=self.handler_save_file)
+            self.filemenu.add_separator()
+        self.filemenu.add_command(label="Exit", command=self.file_exit)
+        self.menubar.add_cascade(label="File", menu=self.filemenu)
+
+        self.top["menu"] = self.menubar
+        return
+
     def handle_spacebar(self, event):
         self.text_content.edit_separator()
         return
@@ -157,10 +174,12 @@ class TextBox():
 
         if not self.document.is_memeber(self.user.info['id']):
             self.text_content.config(state=DISABLED)
+
+        self.init_menus()
         return
 
     def set_content_from_doc(self, doc):
-        fhandle = open(doc.info['ppath']+str(doc.info['id']))
+        fhandle = open(doc.info['ppath']+str(doc.info['id']), 'r')
         contents = fhandle.read()
         fhandle.close()
 
@@ -169,6 +188,19 @@ class TextBox():
         self.create_autocompleteDB(self.text_content.get('1.0', END))
         self.declare_misspell()
 
+        return
+
+    def handler_save_file(self):
+        fhandle = open(self.document.info['ppath']+str(self.document.info['id']), 'w')
+        contents = self.text_content.get('1.0', END)
+        fhandle.write(contents)
+        fhandle.close()
+        return
+
+    def file_exit(self):
+        """Clean-up before exiting a file."""
+
+        self.frame.quit()
         return
 
     def get_content(self):
