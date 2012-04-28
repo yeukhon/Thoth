@@ -7,77 +7,81 @@ class IndexManager:
     BASE_DIR = "dbs"
 
     def __init__(self):
-        self.init_DBM = DBManager()
+        self.manage_DB = DBManager()
 
         self.conn = connect(self.BASE_DIR+'/index.db')
         self.c = self.conn.cursor()
         return
 
-    def add_index_word(self, word, docid, line, column):
-        res = self.get_index_word_id(word)
+    def add_index_word(self, root, docid, line, column, branch_word):
+        # Search for the root word in the index word table.
+        res = self.manage_DB.get_index_word_info(word=root)
 
-        if not res[0]:
-            self.c.execute("""insert into index_word values (
-                NULL, ? )""", (word,))
-            wordid = self.get_index_word_id(word)[1]
+        # The root word does not exist in the table.
+        if not res:
+            # Insert the root word into the index_word table.
+            self.manage_DB.insert_index_word(root)
+            # Get the id of the newly inserted root word.
+            wordid = self.manage_DB.get_index_word_info(word=root)['id']
+        # The root word does exist in the table.
         else:
-            wordid = res[1]
+            # Get the id of the root word.
+            wordid = res['id']
 
-        res = self.get_index_ref_id(wordid, docid, line, column)
-        if not res[0]:
-            self.c.execute("""insert into index_ref values (
-                NULL, ?, ?, ?, ? )""", (wordid, docid, line, column))
+        # Search for a reference with the supplied information.
+        res = self.manage_DB.get_index_ref_info(
+            wordid=wordid, docid=docid, line=line, column=column)
 
-        self.conn.commit()
-        return True, wordid
-
-    def get_index_word_id(self, word):
-        self.c.execute("""select id from index_word where
-            word=? """, (word,))
-        res = self.c.fetchone()
-
-        if res != None:
-            return True, res[0]
+        # A reference with the supplied information does not already exist.
+        if not res:
+            # Insert a reference with the supplied information and return the
+            # the result of the insertion.
+            return self.manage_DB.insert_index_ref(
+                wordid, docid, line, column, branch_word)
+        # A reference with the supplied information already exist, so return
+        # False.
         else:
-            return False,
-
-    def get_index_word(self, wordid):
-        self.c.execute("""select word from index_word where
-            id=? """, (wordid,))
-        res = self.c.fetchone()
-
-        if res != None:
-            return True, res[0]
-        else:
-            return False, ''
-
-    def get_index_ref_id(self, wordid, docid, line, col):
-        self.c.execute("""select id from index_ref where
-            wordid=? AND docid=? AND line=? AND column=?""",
-            (wordid, docid, line, col))
-        res = self.c.fetchone()
-
-        if res != None:
-            return True, res[0]
-        else:
-            return False,
+            return False
 
     def search(self, word):
+        # Create an instance of the Porter Stemmer.
         PS = PorterStemmer()
 
-        wordid = self.get_index_word_id(PS.stem(word, 0, len(word)-1))
+        # Get the information for the supplied word.
+        res = self.manage_DB.get_index_word_info(
+            PS.stem(word, 0, len(word)-1))
 
-        res = []
-        if wordid[0]:
-            self.c.execute("""select * from index_ref where
-                wordid=?""", (wordid[1],))
-            l = self.c.fetchall()
-            for row in l:
+        # The supplied word exist in the index_word table.
+        if res:
+            # Extract the id for the supplied word.
+            wordid = res['id']
+
+            # Return the found entries as a list.
+            res = []
+
+            # Query the index_ref table for all the entries whose wordid
+            # match the supplied word's id.
+            self.c.execute("""select * from index_ref where wordid=?""",
+                (wordid,))
+
+            # Retrieve all the results of the query as a list.
+            entries = self.c.fetchall()
+
+            # For ever entry in the list.
+            for row in entries:
+                # Create a dictionary with the results and add the dictionary
+                # to the list.
                 res.append({
                     'id': row[0],
-                    'word': self.get_index_word(row[1])[1],
+                    'word': self.manage_DB.get_index_word_info(row[1])['word'],
                     'docid': row[2],
-                    'doc': self.init_DBM.get_document_info(row[2])['name'],
-                    'line': row[3],
-                    'column': row[4]})
-        return res
+                    'doc': self.manage_DB.get_document_info(row[2])['name'],
+                    'line': row[3], 'column': row[4],
+                    'branch_word': row[5]})
+
+            # Return the list of all the results.
+            return res
+        # The supplied word does not exist in the index_word table, so return
+        # and empty list.
+        else:
+            return []
