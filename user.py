@@ -9,13 +9,21 @@ from md5 import new
 class User:
     BASE_DIR = "dbs"
 
-    def __init__(self, userid):
+    def __init__(self, userid=0, username=''):
         self.manage_DB = DBManager()
-        self.manage_User = UserManager()
+        self.manage_User = UserManager(self.manage_DB)
         self.manage_Docs = DocumentManager()
         self.manage_Dir = DirectoryManager()
 
-        self.info = self.manage_DB.get_user_info(userid)
+        # Search for the user information by userid.
+        if userid:
+            self.info = self.manage_DB.get_user_info(userid=userid)
+        # Search for the user information by username.
+        elif username:
+            self.info = self.manage_DB.get_user_info(username=username)
+        # Default user, Guest.
+        else:
+            self.info = self.manage_DB.get_user_info(userid=1)
         return
 
     def update_user(self, userid):
@@ -63,77 +71,12 @@ class User:
 class UserManager:
     BASE_DIR = "dbs"
 
-    def __init__(self):
-        self.init_DBM = DBManager()
+    def __init__(self, dbm):
+        self.manage_DB = dbm
 
         self.conn = connect(self.BASE_DIR+'/user.db')
         self.c = self.conn.cursor()
         return
-
-    def get_all_user(self):
-        self.c.execute("""select * from user""")
-        for row in self.c:
-            print row
-        return
-
-    def get_all_usergroup(self):
-        self.c.execute("""select * from usergroup""")
-        for row in self.c:
-            print row
-        return
-
-    def get_user_id(self, name):
-        self.c.execute("""select id from user where lower(username)=?""", (name.lower(),))
-        res = self.c.fetchone()
-
-        if res != None:
-            return True, res[0]
-        else:
-            return False,
-
-    def get_usergroup_id(self, name):
-        self.c.execute("""select id from usergroup where name=?""", (name,))
-        res = self.c.fetchone()
-
-        if res != None:
-            return True, res[0]
-        else:
-            return False,
-
-    def add_user(self, username, password, email, group):
-        userid = self.get_user_id(username)
-        if userid[0]:
-            return False, userid[1]
-
-        t = (username, new(password).hexdigest(), email, group)
-        self.c.execute("""insert into user values (NULL, ?, ?, ?, ?, 0)""", t)
-
-        self.conn.commit()
-        return self.get_user_id(username)
-
-    def add_usergroup(self, name):
-        self.c.execute("""select id from usergroup where
-            name=? """, (name,))
-        res = self.c.fetchone()
-
-        if res != None:
-            return False, res[0]
-
-        t = (name, )
-        self.c.execute("""insert into usergroup values (NULL, ?)""", t)
-        self.conn.commit()
-        return self.get_usergroup_id(name)
-
-    def user_in_DB(self, username, password):
-        t = (username, new(password).hexdigest())
-        self.c.execute("""select id from user where
-            lower(username)=? and password=?""",
-            t)
-        res = self.c.fetchall()
-        if len(res) == 1:
-            return True, res[0][0]
-        else:
-            return False, 0
 
     def close(self):
         self.c.close()
