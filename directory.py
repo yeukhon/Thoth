@@ -7,99 +7,39 @@ class DirectoryManager:
     BASE_DIR = "dbs"
 
     def __init__(self):
-        self.init_DBM = DBManager()
+        self.manage_DB = DBManager()
 
-        self.conn = connect(self.BASE_DIR+'/document.db')
+        self.conn = connect(self.BASE_DIR + '/document.db')
         self.c = self.conn.cursor()
         return
 
-    def get_file_path(self, docid):
-        self.c.execute("""select parent_dir from document
-            where id=?""", (docid,))
+    def get_directory_path(self, directoryid):
+        # Get the information for the supplied directory.
+        res = self.manage_DB.get_directory_info(directoryid)
 
-        parentid = self.c.fetchone()[0]
-        path = ''
-        while parentid != 0:
-            self.c.execute("""select * from directory
-                where id=?""", (parentid,))
-            row = self.c.fetchone()
-            path = row[1] + '/' + path
-            parentid = row[2]
-        return path
+        path_logical = ''
+        path_physical = ''
+        # While the parent_dir exist. The parent of the root directory
+        # does not exist.
+        while res:
+            # Add the name/id of the parent directory to the path.
+            path_logical = '%s/%s' % (res['name'], path_logical)
+            path_physical = '%s/%s' % (res['id'], path_physical)
+            # Get the information for the parent directory.
+            res = self.manage_DB.get_directory_info(res['parent_dir'])
 
-    def get_dir_path(self, parent_dir):
-        parentid = parent_dir
-        path = ''
-        while parentid != 0:
-            self.c.execute("""select * from directory
-                where id=?""", (parentid,))
-            row = self.c.fetchone()
-            path = row[1] + '/' + path
-            parentid = row[2]
-        return path
+        return path_logical, path_physical
 
-    def get_file_path_physical(self, docid):
-        self.c.execute("""select parent_dir from document
-            where id=?""", (docid,))
+    def create_directory(self, directoryid):
+        # Get the local file system path for the supplied directory.
+        path_logical, path_physical = self.get_document_path(directoryid)
 
-        parentid = self.c.fetchone()[0]
-        path = ''
-        while parentid != 0:
-            self.c.execute("""select * from directory
-                where id=?""", (parentid,))
-            row = self.c.fetchone()
-            path = '%s/%s' % (row[0], path)
-            parentid = row[2]
-        return path
-
-    def get_dir_path_physical(self, parent_dir):
-        parentid = parent_dir
-        path = ''
-        while parentid != 0:
-            self.c.execute("""select * from directory
-                where id=?""", (parentid,))
-            row = self.c.fetchone()
-            path = '%s/%s' % (row[0], path)
-            parentid = row[2]
-        return path
-
-    def get_directory_id(self, name, parent_dir):
-        self.c.execute("""select id from directory where
-            lower(name)=? and parent_dir=?""", (name.lower(), parent_dir))
-        res = self.c.fetchone()
-
-        if res != None:
-            return True, res[0]
-        else:
-            return False,
-
-    def add_directory(self, name, parent_dir):
-        dirid = self.get_directory_id(name, parent_dir)
-
-        if dirid[0]:
-            return False, dirid[1]
-
-        t = (name, parent_dir)
-        self.c.execute("""insert into directory values (
-            NULL, ?, ? )""", t)
-
-        self.conn.commit()
-        return self.get_directory_id(name, parent_dir)
-
-    def create_directory(self, dirid, parent_dir):
-        path = self.get_dir_path_physical(parent_dir)
-
-        if not os.path.isdir('%s%s' % (path, dirid)):
-            os.mkdir('%s%s' % (path, dirid))
+        # The supplied folder name does not exist at the supplied directory.
+        if not os.path.exists('%s' % (path_physical,)):
+            # Create the file with the supplied filename.
+            fhandle = open('%s' % (path_physical,), 'w')
+            fhandle.close()
             return True
+        # The supplied folder name does exist at the supplied directory.
         else:
             return False
-
-    def get_dir_dir(self, parent_dir):
-        self.c.execute("""select * from directory where parent_dir=?""", (parent_dir,))
-
-        res = []
-        for row in self.c:
-            res.append({'id': row[0], 'name': row[1], 'parent_dir': row[2]})
-
-        return res
