@@ -35,10 +35,9 @@ class DirectoryManager:
         path_logical, path_physical = self.get_directory_path(directoryid)
 
         # The supplied folder name does not exist at the supplied directory.
-        if not os.path.exists('%s' % (path_physical,)):
-            # Create the file with the supplied filename.
-            fhandle = open('%s' % (path_physical,), 'w')
-            fhandle.close()
+        if not os.path.isdir('%s' % path_physical):
+            # Create the folder with the supplied folder name.
+            os.mkdir('%s' % path_physical)
             return True
         # The supplied folder name does exist at the supplied directory.
         else:
