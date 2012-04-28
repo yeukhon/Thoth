@@ -18,9 +18,11 @@ class Document:
         self.c = self.conn.cursor()
 
         self.info = self.manage_DB.get_document_info(ID)
-        self.info['lpath'] = self.manage_Docs.get_file_path(self.info['id'])
-        self.info['ppath'] = self.manage_Docs.get_file_path_physical(
-            self.info['id'])
+
+        # Get the local and physical file system path for the document.
+        path_logical, path_physical = self.get_document_path(self.info['id'])
+        self.info['lpath'] = path_logical
+        self.info['ppath'] = path_physical
         return
 
     def init_autocompleteDB(self):
