@@ -14,7 +14,7 @@ class Document:
 
     def __init__(self, ID):
         self.manage_DB = DBManager()
-        self.manage_Docs = DocumentManager()
+        self.manage_Docs = DocumentManager(self.manage_DB)
         self.manage_Indx = IndexManager()
 
         self.conn = connect(self.BASE_DIR+'/document.db')
@@ -194,102 +194,60 @@ class Document:
 class DocumentManager:
     BASE_DIR = "dbs"
 
-    def __init__(self):
-        self.init_DBM = DBManager()
+    def __init__(self, dbm):
+        # Save an instance of the database manager.
+        self.manage_DB = dbm
 
+        # Create a connection to the document database.
         self.conn = connect(self.BASE_DIR+'/document.db')
         self.c = self.conn.cursor()
         return
 
-    def add_document(self, name, parent_dir, owner, size):
-        self.c.execute("""select id from document where
-            lower(name)=? and parent_dir=?""", (name.lower(), parent_dir))
-        res = self.c.fetchone()
-
-        if res != None:
-            return False, res[0]
-
-        t = (name, parent_dir, owner, owner, time(), size)
-        self.c.execute("""insert into document values (
-            NULL, ?, ?, ?, 0, ?, ?, ?)""", t)
-
-        self.conn.commit()
-        return self.get_document_id(name, parent_dir)
-
     def create_document(self, docid, parent_dir):
-        path = self.get_dir_path_physical(parent_dir)
+        # Get the local file system path for the supplied parent_dir.
+        path_logical, path_physical = self.get_document_path(docid)
 
-        if not os.path.exists('%s%s' % (path, docid)):
-            fhandle = open('%s%s' % (path, docid), 'w')
-            fhandle.write('Empty Document. Please add content!')
+        # The supplied filename does not exist at the supplied directory.
+        if not os.path.exists('%s%s' % (path_physical, docid)):
+            # Create the file with the supplied filename.
+            fhandle = open('%s%s' % (path_physical, docid), 'w')
             fhandle.close()
-            return True, os.path.getsize('%s%s' % (path, docid))
+            return True
+        # The supplied filename does exist at the supplied directory.
         else:
-            return False, os.path.getsize('%s%s' % (path, docid))
+            return False
 
-    def get_document_id(self, name, parent_dir):
-        self.c.execute("""select id from document where
-            name=? and parent_dir=?""", (name, parent_dir))
-        res = self.c.fetchone()
+    def get_document_path(self, docid):
+        # Get the information for the supplied document.
+        document = self.manage_DB.get_document_info(docid)
 
-        if res != None:
-            return True, res[0]
+        # The supplied document exist.
+        if document:
+            # Get the information for the parent directory of the supplied
+            # document.
+            res = self.manage_DB.get_directory_info(
+                document.info['parent_dir'])
+
+            path_logical = ''
+            path_physical = ''
+            # While the parent_dir exist. The parent of the root directory
+            # does not exist.
+            while res:
+                # Add the name/id of the parent directory to the path.
+                path_logical = '%s/%s' % (res['name'], path)
+                path_physical = '%s/%s' % (res['id'], path)
+                # Get the information for the parent directory.
+                res = self.manage_DB.get_directory_info(res['parent_dir'])
+
+            return path_logical, path_physical
+        # The supplied document does not exist.
         else:
-            return False,
+            return '', ''
 
-    def get_all_documents(self):
-        self.c.execute("""select * from document""")
-
-        res = []
-        for row in self.c:
-            res.append({'id': row[0], 'name': row[1], 'parent_dir': row[2],
-            'owner': row[3], 'infraction': row[4], 'last_mod_user': row[5],
-            'last_mod_time': row[6], 'size': row[7]})
-
-        return res
-
-    def get_file_path(self, docid):
-        self.c.execute("""select parent_dir from document
-            where id=?""", (docid,))
-
-        parentid = self.c.fetchone()[0]
-        path = ''
-        while parentid != 0:
-            self.c.execute("""select * from directory
-                where id=?""", (parentid,))
-            row = self.c.fetchone()
-            path = row[1] + '/' + path
-            parentid = row[2]
-        return path
-
-    def get_file_path_physical(self, docid):
-        self.c.execute("""select parent_dir from document
-            where id=?""", (docid,))
-
-        parentid = self.c.fetchone()[0]
-        path = ''
-        while parentid != 0:
-            self.c.execute("""select * from directory
-                where id=?""", (parentid,))
-            row = self.c.fetchone()
-            path = '%s/%s' % (row[0], path)
-            parentid = row[2]
-        return path
-
-    def get_dir_path_physical(self, parent_dir):
-        parentid = parent_dir
-        path = ''
-        while parentid != 0:
-            self.c.execute("""select * from directory
-                where id=?""", (parentid,))
-            row = self.c.fetchone()
-            path = '%s/%s' % (row[0], path)
-            parentid = row[2]
-        return path
-
-    def get_dir_documents(self, parent_dir):
-        t = (parent_dir,)
-        self.c.execute("""select * from document where parent_dir=?""", t)
+    def get_directory_documents(self, parent_dir):
+        # Query for all the documents in the supplied directory.
+        self.c.execute("""select * from document where parent_dir=?""",
+            (parent_dir,))
 
         res = []
         for row in self.c:
