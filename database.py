@@ -269,25 +269,31 @@ class DBManager():
 
     def insert_application(
         self, username, password, email, usergroup, content, time, status):
-        # At this point, the application database must exist, so create a
-        # database connection to the file.
-        conn = connect(self.BASE_DIR+'/user.db')
+        # There does not already exist an application in the database from
+        # this user.
+        if not self.get_application_info(username=username):
+            # At this point, the application database must exist, so create a
+            # database connection to the file.
+            conn = connect(self.BASE_DIR+'/user.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into application values (
-            NULL, ?, ?, ?, ?, ?, ?, ?)""",
-            (username, password, email, usergroup, content, time, status))
+            c.execute("""insert into application values (
+                NULL, ?, ?, ?, ?, ?, ?, ?)""",
+                (username, password, email, usergroup, content, time, status))
 
-        # Commit all the changes we have made to the application database.
-        conn.commit()
+            # Commit all the changes we have made to the application database.
+            conn.commit()
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # There already exist an application in the database from this user.
+        else:
+            return False
 
     def init_table_user(self, conn):
         """Create the user table in the user database and insert the default
@@ -368,22 +374,27 @@ class DBManager():
         return res
 
     def insert_user(self, username, password, email, usergroup, infraction):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/user.db')
+        # There does not already exist a user with the supplied username.
+        if not self.get_user_info(username=username):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/user.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into user values (
-            NULL, ?, ?, ?, ?, ?)""",
-            (username, password, email, usergroup, infraction))
+            c.execute("""insert into user values (
+                NULL, ?, ?, ?, ?, ?)""",
+                (username, password, email, usergroup, infraction))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # There already exist a user with the supplied username.
+        else:
+            return False
 
     def init_table_usergroup(self, conn):
         """Create the user table in the usergroup database and insert the
@@ -443,20 +454,25 @@ class DBManager():
         return res
 
     def insert_usergroup(self, name):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/user.db')
+        # There does not already exist a usergroup with the supplied name.
+        if not self.get_usergroup_info(name=name):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/user.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into usergroup values (NULL, ?)""", (name,))
+            c.execute("""insert into usergroup values (NULL, ?)""", (name,))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # There already exist a usergroup with the supplied name.
+        else:
+            return False
 
     def init_table_document(self, conn):
         """Create the document table in the usergroup database and insert the
@@ -526,23 +542,30 @@ class DBManager():
     def insert_document(
         self, name, parent_dir, owner, infraction, last_mod_user,
         last_mod_time, size):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        # There does not already exist a document in the supplied directory
+        # with the supplied name.
+        if not self.get_document_info(name=name, parent_dir=parent_dir):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/document.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into document values (
-            NULL, ?, ?, ?, ?, ?, ?, ? )""",
-            (name, parent_dir, owner, infraction, last_mod_user,
-            last_mod_time, size))
+            c.execute("""insert into document values (
+                NULL, ?, ?, ?, ?, ?, ?, ? )""",
+                (name, parent_dir, owner, infraction, last_mod_user,
+                last_mod_time, size))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # There already exist a document in the supplied directory with the
+        # supplied name.
+        else:
+            return False
 
     def init_table_comment(self, conn):
         """Create the comment table in the usergroup database and insert the
@@ -607,22 +630,30 @@ class DBManager():
         return res
 
     def insert_comment(self, docid, userid, content, time):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        # There does not already exist a comment on the supplied document from
+        # the supplied user with the supplied content.
+        if not self.get_comment_info(
+            docid=docid, userid=userid, content=content):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/document.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into comment values
-            (NULL, ?, ?, ?, ?)""",
-            (docid, userid, content, time))
+            c.execute("""insert into comment values
+                (NULL, ?, ?, ?, ?)""",
+                (docid, userid, content, time))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # There already exist a comment on the supplied document from the
+        # supplied user with the supplied content.
+        else:
+            return False
 
     def init_table_invitation(self, conn):
         """Create the invitation table in the usergroup database and insert
@@ -687,22 +718,30 @@ class DBManager():
 
     def insert_invitation(
         self, docid, userid_from, userid_to, content, time, status):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        # There does not already exist a invitation to the supplied document
+        # from the supplied user to the supplied recipient.
+        if not self.get_invitation_info(
+            docid=docid, userid_from=userid_from, userid_to=userid_to):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/document.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into invitation values
-            (NULL, ?, ?, ?, ?, ?)""",
-            (docid, userid_from, userid_to, content, time, status))
+            c.execute("""insert into invitation values
+                (NULL, ?, ?, ?, ?, ?)""",
+                (docid, userid_from, userid_to, content, time, status))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # There already exist a invitation to the supplied document from the
+        # supplied user to the supplied recipient.
+        else:
+            return False
 
     def init_table_complaint(self, conn):
         """Create the complaint table in the usergroup database and insert the
@@ -769,22 +808,29 @@ class DBManager():
         return res
 
     def insert_complaint(self, docid, userid, content, time, status):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        # There does not already exist a complaint on the supplied document
+        # from the supplied user.
+        if not self.get_complaint_info(docid=docid, userid=userid):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/document.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into complaint values
-            (NULL, ?, ?, ?, ?, ?)""",
-            (docid, userid, content, time, status))
+            c.execute("""insert into complaint values
+                (NULL, ?, ?, ?, ?, ?)""",
+                (docid, userid, content, time, status))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # There already exist a complaint on the supplied document from the
+        # supplied user.
+        else:
+            return False
 
     def init_table_member(self, conn):
         """Create the member table in the usergroup database and insert the
@@ -838,22 +884,27 @@ class DBManager():
         return res
 
     def insert_member(self, userid, docid):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        # The supplied user is not already a member of the supplied document.
+        if not self.get_member_info(userid=userid, docid=docid):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/document.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into member values
-            (NULL, ?, ?)""",
-            (userid, docid))
+            c.execute("""insert into member values
+                (NULL, ?, ?)""",
+                (userid, docid))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # The supplied user is already a member of the supplied document.
+        else:
+            return False
 
     def init_table_directory(self, conn):
         """Create the directory table in the usergroup database and insert the
@@ -917,21 +968,28 @@ class DBManager():
         return res
 
     def insert_directory(self, name, parent_dir):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        # The directory in the supplied folder with the supplied name does not
+        # already exist.
+        if not self.get_directory_info(name=name, parent_dir=parent_dir):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/document.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into directory values
-            (NULL, ?, ?)""", (name, parent_dir))
+            c.execute("""insert into directory values
+                (NULL, ?, ?)""", (name, parent_dir))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # The directory in the supplied folder with the supplied name already
+        # exist.
+        else:
+            return False
 
     def init_table_stop_words(self, conn):
         """Create the stop_words table in the user database and insert the
@@ -1535,21 +1593,26 @@ class DBManager():
         return res
 
     def insert_stop_words(self, word):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/index.db')
+        # The supplied word does not already exist in the table.
+        if not self.get_stop_words_info(word=word):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/index.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into stop_words values
-            (NULL, ?)""", (word,))
+            c.execute("""insert into stop_words values
+                (NULL, ?)""", (word,))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # The supplied word already exist in the table.
+        else:
+            return False
 
     def init_table_index_word(self, conn):
         """Create the index table in the usergroup database and insert the
@@ -1603,21 +1666,26 @@ class DBManager():
         return res
 
     def insert_index_word(self, word):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/index.db')
+        # The supplied word does not already exist in the table.
+        if not self.get_index_word_info(word=word):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/index.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into index_word values
-            (NULL, ?)""", (word,))
+            c.execute("""insert into index_word values
+                (NULL, ?)""", (word,))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # The supplied word already exist in the table.
+        else:
+            return False
 
     def init_table_index_ref(self, conn):
         """Create the index_ref table in the usergroup database and insert the
@@ -1677,22 +1745,28 @@ class DBManager():
         return res
 
     def insert_index_ref(self, wordid, docid, line, column):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = connect(self.BASE_DIR+'/index.db')
+        # The supplied reference does not already exist in the table.
+        if not self.get_index_ref_info(
+            wordid=wordid, docid=docid, line=line, column=column):
+            # At this point, the user database must exist, so create a database
+            # connection to the file.
+            conn = connect(self.BASE_DIR+'/index.db')
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
+            # Create the cursor to preform the queries.
+            c = conn.cursor()
 
-        c.execute("""insert into index_ref values
-            (NULL, ?, ?, ?, ?)""",
-            (wordid, docid, line, column))
+            c.execute("""insert into index_ref values
+                (NULL, ?, ?, ?, ?)""",
+                (wordid, docid, line, column))
 
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-        return
+            # Close the cursor that we created to the database and then close
+            # the database itself.
+            c.close()
+            conn.close()
+            return True
+        # The supplied reference already exist in the table.
+        else:
+            return False
 
     def print_userDB(self):
         conn = connect(self.BASE_DIR+'/user.db')
