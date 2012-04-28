@@ -387,6 +387,9 @@ class DBManager():
                 NULL, ?, ?, ?, ?, ?)""",
                 (username, password, email, usergroup, infraction))
 
+            # Commit all the changes we have made to the application database.
+            conn.commit()
+
             # Close the cursor that we created to the database and then close
             # the database itself.
             c.close()
@@ -464,6 +467,9 @@ class DBManager():
             c = conn.cursor()
 
             c.execute("""insert into usergroup values (NULL, ?)""", (name,))
+
+            # Commit all the changes we have made to the application database.
+            conn.commit()
 
             # Close the cursor that we created to the database and then close
             # the database itself.
@@ -557,6 +563,9 @@ class DBManager():
                 (name, parent_dir, owner, infraction, last_mod_user,
                 last_mod_time, size))
 
+            # Commit all the changes we have made to the application database.
+            conn.commit()
+
             # Close the cursor that we created to the database and then close
             # the database itself.
             c.close()
@@ -645,6 +654,9 @@ class DBManager():
                 (NULL, ?, ?, ?, ?)""",
                 (docid, userid, content, time))
 
+            # Commit all the changes we have made to the application database.
+            conn.commit()
+
             # Close the cursor that we created to the database and then close
             # the database itself.
             c.close()
@@ -732,6 +744,9 @@ class DBManager():
             c.execute("""insert into invitation values
                 (NULL, ?, ?, ?, ?, ?)""",
                 (docid, userid_from, userid_to, content, time, status))
+
+            # Commit all the changes we have made to the application database.
+            conn.commit()
 
             # Close the cursor that we created to the database and then close
             # the database itself.
@@ -822,6 +837,9 @@ class DBManager():
                 (NULL, ?, ?, ?, ?, ?)""",
                 (docid, userid, content, time, status))
 
+            # Commit all the changes we have made to the application database.
+            conn.commit()
+
             # Close the cursor that we created to the database and then close
             # the database itself.
             c.close()
@@ -896,6 +914,9 @@ class DBManager():
             c.execute("""insert into member values
                 (NULL, ?, ?)""",
                 (userid, docid))
+
+            # Commit all the changes we have made to the application database.
+            conn.commit()
 
             # Close the cursor that we created to the database and then close
             # the database itself.
@@ -980,6 +1001,9 @@ class DBManager():
 
             c.execute("""insert into directory values
                 (NULL, ?, ?)""", (name, parent_dir))
+
+            # Commit all the changes we have made to the application database.
+            conn.commit()
 
             # Close the cursor that we created to the database and then close
             # the database itself.
@@ -1605,6 +1629,9 @@ class DBManager():
             c.execute("""insert into stop_words values
                 (NULL, ?)""", (word,))
 
+            # Commit all the changes we have made to the application database.
+            conn.commit()
+
             # Close the cursor that we created to the database and then close
             # the database itself.
             c.close()
@@ -1678,6 +1705,9 @@ class DBManager():
             c.execute("""insert into index_word values
                 (NULL, ?)""", (word,))
 
+            # Commit all the changes we have made to the application database.
+            conn.commit()
+
             # Close the cursor that we created to the database and then close
             # the database itself.
             c.close()
@@ -1701,7 +1731,8 @@ class DBManager():
             wordid integer,
             docid integer,
             line integer,
-            column integer
+            column integer,
+            branch_word text
         )""")
 
         # Commit all the changes we have made to the index database.
@@ -1734,7 +1765,7 @@ class DBManager():
 
         if row:
             res = {'id': row[0], 'wordid': row[1], 'docid': row[2],
-                'line': row[3], 'column': row[4]}
+                'line': row[3], 'column': row[4], 'branch_word': row[5]}
         else:
             res = {}
 
@@ -1744,7 +1775,7 @@ class DBManager():
         conn.close()
         return res
 
-    def insert_index_ref(self, wordid, docid, line, column):
+    def insert_index_ref(self, wordid, docid, line, column, branch_word):
         # The supplied reference does not already exist in the table.
         if not self.get_index_ref_info(
             wordid=wordid, docid=docid, line=line, column=column):
@@ -1756,8 +1787,11 @@ class DBManager():
             c = conn.cursor()
 
             c.execute("""insert into index_ref values
-                (NULL, ?, ?, ?, ?)""",
-                (wordid, docid, line, column))
+                (NULL, ?, ?, ?, ?, ?)""",
+                (wordid, docid, line, column, branch_word))
+
+            # Commit all the changes we have made to the application database.
+            conn.commit()
 
             # Close the cursor that we created to the database and then close
             # the database itself.
