@@ -12,7 +12,6 @@ class Document:
     def __init__(self, ID):
         self.manage_DB = DBManager()
         self.manage_Docs = DocumentManager(self.manage_DB)
-        self.manage_Indx = IndexManager()
 
         self.conn = connect(self.BASE_DIR + '/document.db')
         self.c = self.conn.cursor()
@@ -124,6 +123,7 @@ class DocumentManager:
     def __init__(self, dbm):
         # Save an instance of the database manager.
         self.manage_DB = dbm
+        self.manage_Indx = IndexManager()
 
         # Create a connection to the document database.
         self.conn = connect(self.BASE_DIR + '/document.db')
@@ -239,6 +239,9 @@ class DocumentManager:
             return False
 
     def index_document(self, docid):
+        # Get the information for the supplied document.
+        document = self.manage_DB.get_document_info(docid)
+
         # Get the local file system path for the supplied document.
         path_logical, path_physical = self.get_document_path(docid)
 
@@ -273,7 +276,7 @@ class DocumentManager:
                     # column number to the index.
                     self.manage_Indx.add_index_word(
                         PS.stem(word, 0, len(word) - 1),
-                        self.info['id'],
+                        document['id'],
                         line_count,
                         col_count,
                         word)
