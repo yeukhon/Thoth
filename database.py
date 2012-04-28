@@ -741,7 +741,7 @@ class DBManager():
             c = conn.cursor()
 
             c.execute("""insert into invitation values
-                (NULL, ?, ?, ?, ?, ?)""",
+                (NULL, ?, ?, ?, ?, ?, ?)""",
                 (docid, userid_from, userid_to, content, time, status))
 
             # Commit all the changes we have made to the application database.
