@@ -2,7 +2,6 @@ import os
 from sqlite3 import connect
 from time import time
 from md5 import new
-from time import time
 
 
 class DBManager():
@@ -71,16 +70,16 @@ class DBManager():
         if it is not found, then it will create the file and add the tables"""
         # Check the base directory for the user database, if it is not found
         # then proceed with the conditional.
-        if not os.path.exists(self.BASE_DIR+'/user.db'):
+        if not os.path.exists(self.BASE_DIR + '/user.db'):
             # The database does not exist, so create the database file.
-            f = open(self.BASE_DIR+'/user.db', 'w')
+            f = open(self.BASE_DIR + '/user.db', 'w')
             # As of yet, we do not want to do anything to the database in this
             # file writing mode.
             f.close()
 
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/user.db')
+        conn = connect(self.BASE_DIR + '/user.db')
 
         # Check whether the application table does not exist in the database.
         if not self.check_DB_exist(conn, 'application'):
@@ -100,6 +99,12 @@ class DBManager():
             # insert the default values.
             self.init_table_usergroup(conn)
 
+        # Check whether the invitation table does not exist in the database.
+        if not self.check_DB_exist(conn, 'invitation'):
+            # The invitation table does not exist, so create the table and
+            # insert the default values.
+            self.init_table_invitation(conn)
+
         # Close the connection to the database.
         conn.close()
         return
@@ -110,16 +115,16 @@ class DBManager():
         tables."""
         # Check the base directory for the document database, if it is not
         # found then proceed with the conditional.
-        if not os.path.exists(self.BASE_DIR+'/document.db'):
+        if not os.path.exists(self.BASE_DIR + '/document.db'):
             # The database does not exist, so create the database file.
-            f = open(self.BASE_DIR+'/document.db', 'w')
+            f = open(self.BASE_DIR + '/document.db', 'w')
             # As of yet, we do not want to do anything to the database in this
             # file writing mode.
             f.close()
 
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        conn = connect(self.BASE_DIR + '/document.db')
 
         # Check whether the document table does not exist in the database.
         if not self.check_DB_exist(conn, 'document'):
@@ -132,12 +137,6 @@ class DBManager():
             # The comment table does not exist, so create the table and
             # insert the default values.
             self.init_table_comment(conn)
-
-        # Check whether the invitation table does not exist in the database.
-        if not self.check_DB_exist(conn, 'invitation'):
-            # The invitation table does not exist, so create the table and
-            # insert the default values.
-            self.init_table_invitation(conn)
 
         # Check whether the complaint table does not exist in the database.
         if not self.check_DB_exist(conn, 'complaint'):
@@ -166,16 +165,16 @@ class DBManager():
         if it is not found, then it will create the file and add the tables"""
         # Check the base directory for the index database, if it is not found
         # then proceed with the conditional.
-        if not os.path.exists(self.BASE_DIR+'/index.db'):
+        if not os.path.exists(self.BASE_DIR + '/index.db'):
             # The database does not exist, so create the database file.
-            f = open(self.BASE_DIR+'/index.db', 'w')
+            f = open(self.BASE_DIR + '/index.db', 'w')
             # As of yet, we do not want to do anything to the database in this
             # file writing mode.
             f.close()
 
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/index.db')
+        conn = connect(self.BASE_DIR + '/index.db')
 
         # Check whether the user table does not exist in the database.
         if not self.check_DB_exist(conn, 'stop_words'):
@@ -238,7 +237,7 @@ class DBManager():
     def get_application_info(self, appid=0, username=''):
         # At this point, the application database must exist, so create a
         # database connection to the file.
-        conn = connect(self.BASE_DIR+'/user.db')
+        conn = connect(self.BASE_DIR + '/user.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -274,7 +273,7 @@ class DBManager():
         if not self.get_application_info(username=username):
             # At this point, the application database must exist, so create a
             # database connection to the file.
-            conn = connect(self.BASE_DIR+'/user.db')
+            conn = connect(self.BASE_DIR + '/user.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -345,7 +344,7 @@ class DBManager():
     def get_user_info(self, userid=0, username=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/user.db')
+        conn = connect(self.BASE_DIR + '/user.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -378,7 +377,7 @@ class DBManager():
         if not self.get_user_info(username=username):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/user.db')
+            conn = connect(self.BASE_DIR + '/user.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -428,7 +427,7 @@ class DBManager():
     def get_usergroup_info(self, usergroupid=0, name=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/user.db')
+        conn = connect(self.BASE_DIR + '/user.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -461,7 +460,7 @@ class DBManager():
         if not self.get_usergroup_info(name=name):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/user.db')
+            conn = connect(self.BASE_DIR + '/user.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -516,7 +515,7 @@ class DBManager():
     def get_document_info(self, docid=0, name='', parent_dir=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        conn = connect(self.BASE_DIR + '/document.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -553,7 +552,7 @@ class DBManager():
         if not self.get_document_info(name=name, parent_dir=parent_dir):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/document.db')
+            conn = connect(self.BASE_DIR + '/document.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -609,7 +608,7 @@ class DBManager():
     def get_comment_info(self, commentid=0, docid=0, userid=0, content=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        conn = connect(self.BASE_DIR + '/document.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -645,7 +644,7 @@ class DBManager():
             docid=docid, userid=userid, content=content):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/document.db')
+            conn = connect(self.BASE_DIR + '/document.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -697,7 +696,7 @@ class DBManager():
         docid=0, userid_from=0, userid_to=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        conn = connect(self.BASE_DIR + '/user.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -736,7 +735,7 @@ class DBManager():
             docid=docid, userid_from=userid_from, userid_to=userid_to):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/document.db')
+            conn = connect(self.BASE_DIR + '/user.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -792,7 +791,7 @@ class DBManager():
     def get_complaint_info(self, complaintid=0, docid=0, userid=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        conn = connect(self.BASE_DIR + '/document.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -814,7 +813,7 @@ class DBManager():
             res = {'id': row[0], 'docid': row[1], 'userid': row[2],
                 'content': row[3], 'time': row[4], 'status': row[5]}
         else:
-            res ={}
+            res = {}
 
         # Close the cursor that we created to the database and then close the
         # database itself.
@@ -828,7 +827,7 @@ class DBManager():
         if not self.get_complaint_info(docid=docid, userid=userid):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/document.db')
+            conn = connect(self.BASE_DIR + '/document.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -874,7 +873,7 @@ class DBManager():
     def get_member_info(self, memberid=0, userid=0, docid=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        conn = connect(self.BASE_DIR + '/document.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -906,7 +905,7 @@ class DBManager():
         if not self.get_member_info(userid=userid, docid=docid):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/document.db')
+            conn = connect(self.BASE_DIR + '/document.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -956,10 +955,10 @@ class DBManager():
         c.close()
         return
 
-    def get_directory_info(self, directoryid=0, name='', parent_dir=0):
+    def get_directory_info(self, directoryid=0, name='', parent_dir=1):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/document.db')
+        conn = connect(self.BASE_DIR + '/document.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -988,13 +987,13 @@ class DBManager():
         conn.close()
         return res
 
-    def insert_directory(self, name, parent_dir):
+    def insert_directory(self, name, parent_dir=1):
         # The directory in the supplied folder with the supplied name does not
         # already exist.
         if not self.get_directory_info(name=name, parent_dir=parent_dir):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/document.db')
+            conn = connect(self.BASE_DIR + '/document.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -1589,7 +1588,7 @@ class DBManager():
     def get_stop_words_info(self, wordid=0, word=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/index.db')
+        conn = connect(self.BASE_DIR + '/index.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -1621,7 +1620,7 @@ class DBManager():
         if not self.get_stop_words_info(word=word):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/index.db')
+            conn = connect(self.BASE_DIR + '/index.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -1665,7 +1664,7 @@ class DBManager():
     def get_index_word_info(self, wordid=0, word=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/index.db')
+        conn = connect(self.BASE_DIR + '/index.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -1697,7 +1696,7 @@ class DBManager():
         if not self.get_index_word_info(word=word):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/index.db')
+            conn = connect(self.BASE_DIR + '/index.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -1746,7 +1745,7 @@ class DBManager():
         wordid=0, docid=0, line=0, column=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = connect(self.BASE_DIR+'/index.db')
+        conn = connect(self.BASE_DIR + '/index.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -1781,7 +1780,7 @@ class DBManager():
             wordid=wordid, docid=docid, line=line, column=column):
             # At this point, the user database must exist, so create a database
             # connection to the file.
-            conn = connect(self.BASE_DIR+'/index.db')
+            conn = connect(self.BASE_DIR + '/index.db')
 
             # Create the cursor to preform the queries.
             c = conn.cursor()
@@ -1803,7 +1802,7 @@ class DBManager():
             return False
 
     def print_userDB(self):
-        conn = connect(self.BASE_DIR+'/user.db')
+        conn = connect(self.BASE_DIR + '/user.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -1825,7 +1824,7 @@ class DBManager():
         return
 
     def print_documentDB(self):
-        conn = connect(self.BASE_DIR+'/document.db')
+        conn = connect(self.BASE_DIR + '/document.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -1871,7 +1870,7 @@ class DBManager():
         return
 
     def print_indexDB(self):
-        conn = connect(self.BASE_DIR+'/index.db')
+        conn = connect(self.BASE_DIR + '/index.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -1907,7 +1906,7 @@ class DBManager():
             email       =>  New user's email.
             usergroup   =>  New user's usergroup."""
         # Create the cursor to preform the queries.
-        conn = connect(self.BASE_DIR+'/user.db')
+        conn = connect(self.BASE_DIR + '/user.db')
 
         # Create the cursor to preform the queries.
         c = conn.cursor()
@@ -1930,7 +1929,7 @@ class DBManager():
         """Selects a user(s) from the user table using the key/value pairs
         contained within the query dictionary and returns the values for the
         columns contained in the select list."""
-        conn = connect(self.BASE_DIR+'/user.db')
+        conn = connect(self.BASE_DIR + '/user.db')
         c = conn.cursor()
 
         str_query = ''
@@ -1939,7 +1938,7 @@ class DBManager():
         str_query = str_query[:-5]
 
         t = tuple(query.values())
-        c.execute("""select * from user where """+str_query, t)
+        c.execute("""select * from user where """ + str_query, t)
 
         res = []
         for row in c:

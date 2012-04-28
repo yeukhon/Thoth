@@ -9,7 +9,7 @@ class IndexManager:
     def __init__(self):
         self.manage_DB = DBManager()
 
-        self.conn = connect(self.BASE_DIR+'/index.db')
+        self.conn = connect(self.BASE_DIR + '/index.db')
         self.c = self.conn.cursor()
         return
 
@@ -49,7 +49,7 @@ class IndexManager:
 
         # Get the information for the supplied word.
         res = self.manage_DB.get_index_word_info(
-            PS.stem(word, 0, len(word)-1))
+            PS.stem(word, 0, len(word) - 1))
 
         # The supplied word exist in the index_word table.
         if res:

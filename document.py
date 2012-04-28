@@ -1,10 +1,7 @@
 from database import DBManager
-from directory import DirectoryManager
 from index import IndexManager
 from porter import PorterStemmer
-from time import time
 from sqlite3 import connect
-import user
 import os
 import re
 
@@ -17,7 +14,7 @@ class Document:
         self.manage_Docs = DocumentManager(self.manage_DB)
         self.manage_Indx = IndexManager()
 
-        self.conn = connect(self.BASE_DIR+'/document.db')
+        self.conn = connect(self.BASE_DIR + '/document.db')
         self.c = self.conn.cursor()
 
         self.info = self.manage_DB.get_document_info(ID)
@@ -28,11 +25,11 @@ class Document:
 
     def init_autocompleteDB(self):
         # Create a newe copy of the autocomplete database.
-        f = open(self.BASE_DIR+'/autocomplete.db', 'w')
+        f = open(self.BASE_DIR + '/autocomplete.db', 'w')
         f.close()
 
         # Create a connection to the autocomplete database.
-        conn = connect(self.BASE_DIR+'/autocomplete.db')
+        conn = connect(self.BASE_DIR + '/autocomplete.db')
         # Create a cursor to the autocomplete database.
         c = conn.cursor()
 
@@ -67,7 +64,7 @@ class Document:
 
     def insert_word_autocompleteDB(self, word):
         # Create a connection to the autocomplete database.
-        conn = connect(self.BASE_DIR+'/autocomplete.db')
+        conn = connect(self.BASE_DIR + '/autocomplete.db')
         # Create a cursor to the autocomplete database.
         c = conn.cursor()
 
@@ -93,7 +90,7 @@ class Document:
 
     def suggest_word_autocompleteDB(self, fragment):
          # Create a connection to the autocomplete database.
-        conn = connect(self.BASE_DIR+'/autocomplete.db')
+        conn = connect(self.BASE_DIR + '/autocomplete.db')
         # Create a cursor to the autocomplete database.
         c = conn.cursor()
 
@@ -102,7 +99,7 @@ class Document:
             word Like ? and word != ?
             order by word asc
             limit 1""",
-            (fragment+'%', fragment))
+            (fragment + '%', fragment))
 
         # Get 1 result.
         res = c.fetchone()
@@ -126,7 +123,7 @@ class DocumentManager:
         self.manage_DB = dbm
 
         # Create a connection to the document database.
-        self.conn = connect(self.BASE_DIR+'/document.db')
+        self.conn = connect(self.BASE_DIR + '/document.db')
         self.c = self.conn.cursor()
         return
 
@@ -161,8 +158,8 @@ class DocumentManager:
             # does not exist.
             while res:
                 # Add the name/id of the parent directory to the path.
-                path_logical = '%s/%s' % (res['name'], path)
-                path_physical = '%s/%s' % (res['id'], path)
+                path_logical = '%s/%s' % (res['name'], path_logical)
+                path_physical = '%s/%s' % (res['id'], path_physical)
                 # Get the information for the parent directory.
                 res = self.manage_DB.get_directory_info(res['parent_dir'])
 
@@ -272,7 +269,7 @@ class DocumentManager:
                     # word. Add the root word, with the current line and
                     # column number to the index.
                     self.manage_Indx.add_index_word(
-                        PS.stem(word, 0, len(word)-1),
+                        PS.stem(word, 0, len(word) - 1),
                         self.info['id'],
                         line_count,
                         col_count,

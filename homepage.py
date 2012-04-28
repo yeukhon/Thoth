@@ -18,7 +18,8 @@ class Homepage:
         # Child Windows:
         self.window_login = Login_Window(master, self, self.user)
         self.window_editor = TextBox(master)
-        self.window_invitations = Invitation_Viewer_Window(master, self, self.user)
+        self.window_invitations = Invitation_Viewer_Window(
+            master, self, self.user)
         self.window_applications = App_Viewer_Window(master, self, self.user)
 
         self.curr_directory = {'name': '', 'parent_dir': '1'}
@@ -41,12 +42,12 @@ class Homepage:
         self.init_frame_cpanel()
         self.update_directory(1)
 
-        self.frame_dir.grid(row=0, column=0, sticky=N+E+S+W)
-        self.frame_create.grid(row=1, column=0, sticky=N+E+S+W)
-        self.frame_cpanel.grid(row=0, column=1, rowspan=2, sticky=N+E+S+W)
+        self.frame_dir.grid(row=0, column=0, sticky=N + E + S + W)
+        self.frame_create.grid(row=1, column=0, sticky=N + E + S + W)
+        self.frame_cpanel.grid(row=0, column=1, rowspan=2,
+            sticky=N + E + S + W)
 
         return
-
 
     def init_frame_directory(self):
         # Left Side Frame.
@@ -59,10 +60,10 @@ class Homepage:
         # Displays the current directory
         self.frame_dir_ctrl_label = Label(
             self.frame_dir,
-            text=self.curr_directory['name']+'/',
+            text=self.curr_directory['name'] + '/',
             fg='#ffa500')
         self.frame_dir_ctrl_label.grid(
-            row=1, column=0, sticky=N+E+S+W)
+            row=1, column=0, sticky=N + E + S + W)
 
         # Button to go up a directory
         self.frame_dir_ctrl_up = Button(
@@ -72,7 +73,7 @@ class Homepage:
             padx=1,
             relief=RAISED,
             command=self.handler_directory_up)
-        self.frame_dir_ctrl_up.grid(row=1, column=1, sticky=N+E+S+W)
+        self.frame_dir_ctrl_up.grid(row=1, column=1, sticky=N + E + S + W)
 
         return
 
@@ -88,10 +89,10 @@ class Homepage:
         self.frame_create_banner_dir = Label(
             self.frame_create)
         self.frame_create_banner_dir.grid(
-            row=0, column=0, columnspan=2, sticky=N+S+W)
+            row=0, column=0, columnspan=2, sticky=N + S + W)
 
         self.entry_dirname = Entry(self.frame_create)
-        self.entry_dirname.grid(row=1, column=0, sticky=N+E+S+W)
+        self.entry_dirname.grid(row=1, column=0, sticky=N + E + S + W)
         self.button_dirname = Button(
             self.frame_create,
             text='Create',
@@ -99,16 +100,16 @@ class Homepage:
             padx=1,
             relief=RAISED,
             command=self.handler_create_directory)
-        self.button_dirname.grid(row=1, column=1, sticky=N+E+S+W)
+        self.button_dirname.grid(row=1, column=1, sticky=N + E + S + W)
 
         # Create Document
         self.frame_create_banner_doc = Label(
             self.frame_create)
         self.frame_create_banner_doc.grid(
-            row=2, column=0, columnspan=2, sticky=N+S+W)
+            row=2, column=0, columnspan=2, sticky=N + S + W)
 
         self.entry_docname = Entry(self.frame_create)
-        self.entry_docname.grid(row=3, column=0, sticky=N+E+S+W)
+        self.entry_docname.grid(row=3, column=0, sticky=N + E + S + W)
         self.button_docname = Button(
             self.frame_create,
             text='Create',
@@ -116,7 +117,7 @@ class Homepage:
             padx=1,
             relief=RAISED,
             command=self.handler_create_document)
-        self.button_docname.grid(row=3, column=1, sticky=N+E+S+W)
+        self.button_docname.grid(row=3, column=1, sticky=N + E + S + W)
 
         return
 
@@ -128,7 +129,6 @@ class Homepage:
             self.frame_cpanel,
             text=self.user.info['username'])
         self.frame_cpanel_user.grid()
-
 
         # View Your Documents Button
         self.frame_cpanel_ownerdocs = Button(
@@ -174,7 +174,8 @@ class Homepage:
         # File Pulldown menu, contains "Open", "Save", and "Exit" options.
         self.filemenu = Menu(self.menubar, tearoff=0)
         if self.user.info['usergroup'] == 4:
-            self.filemenu.add_command(label="Login", command=self.handler_view_login)
+            self.filemenu.add_command(label="Login",
+            command=self.handler_view_login)
             self.filemenu.add_separator()
         self.filemenu.add_command(label="Exit", command=self.file_exit)
         self.menubar.add_cascade(label="File", menu=self.filemenu)
@@ -186,7 +187,7 @@ class Homepage:
         self.curr_directory = self.user.manage_DB.get_directory_info(dirid)
         self.curr_directory_contents_dir = self.user.manage_Dir.get_dir_dir(
             dirid)
-        self.curr_directory_contents_doc = self.user.manage_Docs.get_dir_documents(dirid)
+        self.curr_directory_contents_doc = self.user.manage_Docs.get_directory_documents(dirid)
 
         # Remove the old items from the list.
         for label in self.curr_directory_contents:
@@ -195,23 +196,23 @@ class Homepage:
         self.curr_directory_contents = []
 
         self.frame_dir_ctrl_label.configure(
-            text=self.curr_directory['name']+'/')
+            text=self.curr_directory['name'] + '/')
         start = 2
         for row in self.curr_directory_contents_dir:
             self.curr_directory_contents.append([
                 Label(
                     self.frame_dir,
                     fg='#0000ff',
-                    text=row['name']+'/'),
+                    text=row['name'] + '/'),
                 Button(
                     self.frame_dir,
                     text='View',
                     relief=RAISED,
                     command=lambda i=row['id']: self.update_directory(i))])
             self.curr_directory_contents[-1][0].grid(
-                row=start, column=0, sticky=N+E+S+W)
+                row=start, column=0, sticky=N + E + S + W)
             self.curr_directory_contents[-1][1].grid(
-                row=start, column=1, sticky=N+E+S+W)
+                row=start, column=1, sticky=N + E + S + W)
             start += 1
 
         for row in self.curr_directory_contents_doc:
@@ -225,17 +226,17 @@ class Homepage:
                     relief=RAISED,
                     command=lambda i=row['id']: self.open_document(i))])
             self.curr_directory_contents[-1][0].grid(
-                row=start, column=0, sticky=N+E+S+W)
+                row=start, column=0, sticky=N + E + S + W)
             self.curr_directory_contents[-1][1].grid(
-                row=start, column=1, sticky=N+E+S+W)
+                row=start, column=1, sticky=N + E + S + W)
             start += 1
 
         curr_dir = self.user.manage_Dir.get_dir_path(
             self.curr_directory['id'])
         self.frame_create_banner_dir.config(
-            text='Directory @ '+curr_dir+':')
+            text='Directory @ ' + curr_dir + ':')
         self.frame_create_banner_doc.config(
-            text='Document @ '+curr_dir+':')
+            text='Document @ ' + curr_dir + ':')
         return
 
     def open_document(self, docid):
@@ -262,7 +263,7 @@ class Homepage:
         if not res_add[0] or not res_cre:
             tkMessageBox.showerror(
                 'Error Creating Directory!',
-                'Directory "'+self.entry_dirname.get()+'" already exist!')
+                'Directory "' + self.entry_dirname.get() + '" already exist!')
 
         return
 
@@ -282,7 +283,7 @@ class Homepage:
         if not res_add[0] or not res_cre[0]:
             tkMessageBox.showerror(
                 'Error Creating Document!',
-                'Document "'+self.entry_docname.get()+'" already exist!')
+                'Document "' + self.entry_docname.get() + '" already exist!')
 
         return
 

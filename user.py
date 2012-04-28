@@ -1,9 +1,7 @@
 from database import DBManager
-from document import DocumentManager
 from directory import DirectoryManager
 from sqlite3 import connect
 from datetime import datetime
-from md5 import new
 
 
 class User:
@@ -12,7 +10,6 @@ class User:
     def __init__(self, userid=0, username=''):
         self.manage_DB = DBManager()
         self.manage_User = UserManager(self.manage_DB)
-        self.manage_Docs = DocumentManager()
         self.manage_Dir = DirectoryManager()
 
         # Search for the user information by userid.
@@ -30,43 +27,6 @@ class User:
         self.info = self.manage_DB.get_user_info(userid)
         return
 
-    def view_invitations_to(self):
-        self.manage_Docs.c.execute("""select * from invitation
-            where userid_to=?""", (self.info['id'],))
-
-        res = []
-        for row in self.manage_Docs.c:
-            doc_info = self.manage_DB.get_document_info(row[1])
-            usr_info = self.manage_DB.get_user_info(row[2])
-            if row[6] == 1: status = 'Accepted'
-            elif row[6] == 0: status = 'Pending'
-            else: status = 'Denied'
-
-            res.append({'id': row[0], 'docid': doc_info['name'],
-                'userid_from': usr_info['username'],
-                'userid_to': self.info['username'], 'content': row[4],
-                'time': datetime.fromtimestamp(int(row[5])), 'status': status})
-
-        return res
-
-    def view_invitations_from(self):
-        self.manage_Docs.c.execute("""select * from invitation where userid_from=?""",
-            (self.info['id'],))
-
-        res = []
-        for row in self.manage_Docs.c:
-            doc_info = self.manage_DB.get_document_info(row[1])
-            usr_info = self.manage_DB.get_user_info(row[3])
-            if row[6] == 1: status = 'Accepted'
-            elif row[6] == 0: status = 'Pending'
-            else: status = 'Denied'
-
-            res.append({'id': row[0], 'docid': doc_info['name'],
-                'userid_from': self.info['username'],
-                'userid_to': usr_info['username'], 'content': row[4],
-                'time': datetime.fromtimestamp(int(row[5])), 'status': status})
-
-        return res
 
 class UserManager:
     BASE_DIR = "dbs"
@@ -74,13 +34,74 @@ class UserManager:
     def __init__(self, dbm):
         self.manage_DB = dbm
 
-        self.conn = connect(self.BASE_DIR+'/user.db')
+        self.conn = connect(self.BASE_DIR + '/user.db')
         self.c = self.conn.cursor()
         return
 
-    def close(self):
-        self.c.close()
-        return
+    def get_invitations_to(self, userid):
+        # Query for all invitations to the supplied user.
+        self.c.execute("""select * from invitation where userid_to=?""",
+            (userid,))
+
+        # Return comments as a list.
+        res = []
+        for row in self.c:
+            # Get the information for the document the current invitation is
+            # referencing to.
+            doc_info = self.manage_DB.get_document_info(row[1])
+            # Get the information for the user who sent the current invitation.
+            usr_info = self.manage_DB.get_user_info(row[2])
+
+            # Determine the state of the invitation.
+            if row[6] == 1:
+                status = 'Accepted'
+            elif row[6] == 0:
+                status = 'Pending'
+            else:
+                status = 'Denied'
+
+            # Create a dictionary with the results and add the dictionary to
+            # the list.
+            res.append({'id': row[0], 'docid': doc_info['name'],
+                'userid_from': usr_info['username'],
+                'userid_to': self.info['username'], 'content': row[4],
+                'time': datetime.fromtimestamp(int(row[5])), 'status': status})
+
+        # Return the list of results.
+        return res
+
+    def get_invitations_from(self, userid):
+        # Query for all invitations from the supplied user.
+        self.c.execute("""select * from invitation where userid_from=?""",
+            (userid,))
+
+        # Return comments as a list.
+        res = []
+        for row in self.c:
+            # Get the information for the document the current invitation is
+            # referencing to.
+            doc_info = self.manage_DB.get_document_info(row[1])
+            # Get the information for the user of the current invitation.
+            usr_info = self.manage_DB.get_user_info(row[3])
+
+            # Determine the state of the invitation.
+            if row[6] == 1:
+                status = 'Accepted'
+            elif row[6] == 0:
+                status = 'Pending'
+            else:
+                status = 'Denied'
+
+            # Create a dictionary with the results and add the dictionary to
+            # the list.
+            res.append({'id': row[0], 'docid': doc_info['name'],
+                'userid_from': self.info['username'],
+                'userid_to': usr_info['username'], 'content': row[4],
+                'time': datetime.fromtimestamp(int(row[5])), 'status': status})
+
+        # Return the list of results.
+        return res
+
 
 if __name__ == "__main__":
     lg = UserManager()
