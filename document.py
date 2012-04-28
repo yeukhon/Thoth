@@ -150,7 +150,7 @@ class DocumentManager:
             # Get the information for the parent directory of the supplied
             # document.
             res = self.manage_DB.get_directory_info(
-                document.info['parent_dir'])
+                document['parent_dir'])
 
             path_logical = ''
             path_physical = ''
