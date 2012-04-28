@@ -20,7 +20,8 @@ class Document:
         self.info = self.manage_DB.get_document_info(ID)
 
         # Get the local and physical file system path for the document.
-        path_logical, path_physical = self.get_document_path(self.info['id'])
+        path_logical, path_physical = self.manage_Docs.get_document_path(
+            self.info['id'])
         self.info['lpath'] = path_logical
         self.info['ppath'] = path_physical
         return
