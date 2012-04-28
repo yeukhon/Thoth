@@ -26,169 +26,96 @@ class Document:
             self.info['id'])
         return
 
-    def is_memeber(self, userid):
-        if self.info['owner'] == userid:
-            return True
+    def init_autocompleteDB(self):
+        # Create a newe copy of the autocomplete database.
+        f = open(self.BASE_DIR+'/autocomplete.db', 'w')
+        f.close()
 
-        self.c.execute("""select * from member where
-            docid=? and userid=?""",
-            (self.info['id'], userid))
-        res = self.c.fetchone()
-
-        if res:
-            return True
-        else:
-            return False
-
-    def get_invitation_id(self, userid_from, userid_to):
-        self.c.execute("""select id from invitation where
-            docid=? and userid_from=? and userid_to=?""",
-            (self.info['id'], userid_from, userid_to))
-        res = self.c.fetchone()
-
-        if res != None:
-            return True, res[0]
-        else:
-            return False,
-
-    def get_comment_id(self, userid, content):
-        self.c.execute("""select id from comment where
-            docid=? and userid=? and content=?""",
-            (self.info['id'], userid, content))
-        res = self.c.fetchone()
-
-        if res != None:
-            return True, res[0]
-        else:
-            return False,
-
-    def get_complaint_id(self, userid):
-        self.c.execute("""select id from complaint where
-            docid=? and userid=? """,
-            (self.info['id'], userid))
-        res = self.c.fetchone()
-
-        if res != None:
-            return True, res[0]
-        else:
-            return False,
-
-    def insert_invitation(self, userid_from, userid_to, content):
-        inviteid = self.get_invitation_id(userid_from, userid_to)
-
-        if inviteid[0]:
-            return False, inviteid[1]
-
-        self.c.execute("""insert into invitation values (
-            NULL, ?, ?, ?, ?, ?, 0)""",
-            (self.info['id'], userid_from, userid_to, content, time()))
-
-        self.conn.commit()
-        return self.get_invitation_id(userid_from, userid_to)
-
-    def insert_comment(self, userid, content):
-        commentid = self.get_comment_id(userid, content)
-
-        if commentid[0]:
-            return False, commentid[1]
-
-        self.c.execute("""insert into comment values (
-            NULL, ?, ?, ?, ? )""",
-            (self.info['id'], userid, content, time()))
-
-        self.conn.commit()
-        return self.get_comment_id(userid, content)
-
-    def insert_complaint(self, userid, content):
-        complaintid = self.get_complaint_id(userid)
-
-        if complaintid[0]:
-            return False, complaintid[1]
-
-        self.c.execute("""insert into complaint values (
-            NULL, ?, ?, ?, ?, 0 )""",
-            (self.info['id'], userid, content, time()))
-
-        self.conn.commit()
-        return self.get_complaint_id(userid)
-
-    def view_comments(self):
-        self.c.execute("""select * from comment where docid=?""",
-            (self.info['id'], ))
-
-        res = []
-        for row in self.c:
-            res.append({'id': row[0], 'docid': row[1], 'userid': row[2],
-                'content': row[3], 'time': row[4]})
-
-        return res
-
-    def view_complaints(self):
-        self.c.execute("""select * from complaint where docid=?""",
-            (self.info['id'], ))
-
-        res = []
-        for row in self.c:
-            res.append({'id': row[0], 'docid': row[1], 'userid': row[2],
-                'content': row[3], 'time': row[4]})
-
-        return res
-
-    def index_document(self):
-        fhandle = open(self.info['ppath'] + str(self.info['id']), 'r')
-        PS = PorterStemmer()
-
-        content = fhandle.readline().lower()
-        line_count = 1
-        while content != '':
-            words = re.findall('\w+', content)
-            for word in words:
-                if len(word) > 3:
-                    col_count = content.find(word) + 1
-                    self.manage_Indx.add_index_word(
-                        PS.stem(word, 0, len(word)-1),
-                        self.info['id'],
-                        line_count,
-                        col_count)
-            content = fhandle.readline().lower()
-            line_count += 1
-
-        fhandle.close()
-        return
-
-    def create_autocompleteDB(self, content):
-        if not os.path.exists(self.BASE_DIR+'/autocomplete.db'):
-            f = open(self.BASE_DIR+'/autocomplete.db', 'w')
-            f.close()
-
+        # Create a connection to the autocomplete database.
         conn = connect(self.BASE_DIR+'/autocomplete.db')
+        # Create a cursor to the autocomplete database.
         c = conn.cursor()
 
-        if not self.manage_DB.check_DB_exist(conn, str(self.info['id'])):
-            c.execute("""create table ? (
-                id integer primary key autoincrement,
-                word text)""", (self.info['id'],))
+        # Create the autocomplete table.
+        c.execute("""create table autocomplete (
+            id integer primary key autoincrement,
+            word text)""")
 
-            words = re.findall('\w+', content).lower()
-            for word in words:
-                if len(word) > 3:
-                    conn.execute("""insert into ? values (
-                        NULL, ?)""", (self.info['id'],))
+        # Open the document for reading.
+        fhandle = open('%s%s' % (self.info['ppath'], self.info['id']), 'r')
 
+        # Get the contents of the supplied document and force the contents to
+        # lowercase.
+        content = fhandle.read().lower()
+
+        # Find all the words in the supplied content.
+        words = re.findall('\w+', content)
+
+        for word in words:
+            # Only words with a length greater than 3 character will be used
+            # as suggestions.
+            if len(word) > 3:
+                # Insert the word into the autocomplete table.
+                conn.execute("""insert into autocomplete values (
+                    NULL, ?)""", (word,))
+
+        # Commit the changes to the autocomplete database.
+        conn.commit()
+        # Close the connection to the autocomplete database.
+        conn.close()
+        return
+
+    def insert_word_autocompleteDB(self, word):
+        # Create a connection to the autocomplete database.
+        conn = connect(self.BASE_DIR+'/autocomplete.db')
+        # Create a cursor to the autocomplete database.
+        c = conn.cursor()
+
+        # Search for the word.
+        c.execute("""select * from autocomplete where
+            word=?""",
+            (word,))
+
+        # Get 1 result.
+        res = c.fetchone()
+
+        # The result does not exist.
+        if not res:
+            c.execute("""insert into autocomplete values(
+                NULL, ?)""", (word,))
+
+            # Commit the changes to the autocomplete database.
             conn.commit()
+
+        # Close the connection to the autocomplete database.
+        conn.close()
         return
 
-    def suggest_autocomplete(self, fragment):
+    def suggest_word_autocompleteDB(self, fragment):
+         # Create a connection to the autocomplete database.
         conn = connect(self.BASE_DIR+'/autocomplete.db')
+        # Create a cursor to the autocomplete database.
         c = conn.cursor()
 
-        c.execute("""select * where word Like ?""", (fragment+'%',))
+        # Search for the query fragment and get only 1 result order ascending.
+        c.execute("""select word from autocomplete where
+            word Like ? and word != ?
+            order by word asc
+            limit 1""",
+            (fragment+'%', fragment))
 
-        res = []
-        for row in c:
-            res.append({'id': row[0], 'word': row[1]})
+        # Get 1 result.
+        res = c.fetchone()
 
-        return res
+        # Close the connection to the autocomplete database.
+        conn.close()
+
+        # The result exist.
+        if res:
+            return res[0]
+        # The result does not exist.
+        else:
+            return ''
 
 
 class DocumentManager:
@@ -249,28 +176,133 @@ class DocumentManager:
         self.c.execute("""select * from document where parent_dir=?""",
             (parent_dir,))
 
+        # Return comments as a list.
         res = []
         for row in self.c:
+            # Create a dictionary with the results and add the dictionary to
+            # the list.
             res.append({'id': row[0], 'name': row[1], 'parent_dir': row[2],
-            'owner': row[3], 'infraction': row[4], 'last_mod_user': row[5],
-            'last_mod_time': row[6], 'size': row[7]})
+                'owner': row[3], 'infraction': row[4],
+                'last_mod_user': row[5], 'last_mod_time': row[6],
+                'size': row[7]})
 
+        # Return the list of results.
         return res
 
+    def get_document_comments(self, docid):
+        # Query for all comments for the supplied document.
+        self.c.execute("""select * from comment where docid=?""",
+            (docid, ))
+
+        # Return comments as a list.
+        res = []
+        for row in self.c:
+            # Create a dictionary with the results and add the dictionary to
+            # the list.
+            res.append({'id': row[0], 'docid': row[1], 'userid': row[2],
+                'content': row[3], 'time': row[4]})
+
+        # Return the list of results.
+        return res
+
+    def get_document_complaints(self, docid):
+        # Query for all complaints for the supplied document.
+        self.c.execute("""select * from complaint where docid=?""",
+            (docid, ))
+
+        # Return comments as a list.
+        res = []
+        for row in self.c:
+            # Create a dictionary with the results and add the dictionary to
+            # the list.
+            res.append({'id': row[0], 'docid': row[1], 'userid': row[2],
+                'content': row[3], 'time': row[4]})
+
+        # Return the list of results.
+        return res
+
+    def is_member(self, docid, userid):
+        # The supplied user is the owner of the supplied document.
+        res = self.manage_DB.get_document_info(docid)
+        if res['owner'] == userid:
+            return True
+
+        # Search for a member entry with the supplied user for the supplied
+        # document.
+        res = self.manage_DB.get_member_info(userid=userid, docid=docid)
+
+        # There exist a member entry for the supplied user.
+        if res:
+            return True
+        # There does not exist a member entry for the supplied user.
+        else:
+            return False
+
+    def index_document(self, docid):
+        # Get the local file system path for the supplied document.
+        path_logical, path_physical = self.get_document_path(docid)
+
+        # Open the document for reading.
+        fhandle = open('%s%s' % (path_physical, docid), 'r')
+        # Create an instance of the Porter Stemmer.
+        PS = PorterStemmer()
+
+        # Get the 1st line of the supplied document and force the contents to
+        # lowercase.
+        content = fhandle.readline().lower()
+
+        # The text widget starts indexing its lines at 1, but columns start
+        # indexing at 0.
+        line_count = 1
+
+        # While the supplied document has content to be read.
+        while content != '':
+            # Find all words from the current line of the supplied document
+            # and put them in a list.
+            words = re.findall('\w+', content)
+
+            # For each word in the list of words from the current line.
+            for word in words:
+                # Only words whose length is greater than 3 will be indexed.
+                if len(word) > 3:
+                    # The column of the current word is its index in the
+                    # current line.
+                    col_count = content.find(word) + 1
+                    # Using the PorterStemmer, find the root of the current
+                    # word. Add the root word, with the current line and
+                    # column number to the index.
+                    self.manage_Indx.add_index_word(
+                        PS.stem(word, 0, len(word)-1),
+                        self.info['id'],
+                        line_count,
+                        col_count,
+                        word)
+
+            # Get the next line of the supplied document and force the
+            # contents to lowercase.
+            content = fhandle.readline().lower()
+            # Increment the line count.
+            line_count += 1
+
+        # Close the supplied document file.
+        fhandle.close()
+        return
+
 if __name__ == '__main__':
-    doc = Document(0)
-    doc.insert_invitation(0, 0, 'Join Sucka!')
-    doc.insert_comment(0, 'I a comment Sucka!')
-    doc.insert_complaint(0, 'I haz complaints Sucka!')
+#    doc = Document(0)
+#    doc.insert_invitation(0, 0, 'Join Sucka!')
+#    doc.insert_comment(0, 'I a comment Sucka!')
+#    doc.insert_complaint(0, 'I haz complaints Sucka!')
 
-    docM = DocumentManager()
-    docM.add_document('docname.txt', 1, 0, 1000)
+    manage_Docs = DocumentManager(DBManager())
+    manage_Docs.create_autocompleteDB(1, "Hello World!")
+#    docM.add_document('docname.txt', 1, 0, 1000)
 
-    u = user.User(0)
+#    u = user.User(0)
 
 
-    print 'Invitations:', u.view_invitations_to()[0]
-    print '\nComments:', doc.view_comments()
-    print '\nComplaints:', doc.view_complaints()
-    print '\nAll Documents:', docM.get_all_documents()
-    print '\nDir Documents:', docM.get_dir_documents(1)
+#    print 'Invitations:', u.view_invitations_to()[0]
+#    print '\nComments:', doc.view_comments()
+#    print '\nComplaints:', doc.view_complaints()
+#    print '\nAll Documents:', docM.get_all_documents()
+#    print '\nDir Documents:', docM.get_dir_documents(1)
