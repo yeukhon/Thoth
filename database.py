@@ -235,7 +235,7 @@ class DBManager():
         c.close()
         return
 
-    def get_application_info(self, appid):
+    def get_application_info(self, appid=0, username=''):
         # At this point, the application database must exist, so create a
         # database connection to the file.
         conn = connect(self.BASE_DIR+'/user.db')
@@ -243,7 +243,15 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from application where id=?""", (appid,))
+        # Search by userid.
+        if appid:
+            c.execute("""select * from application where id=?""", (appid,))
+        # Search by username.
+        elif username:
+            c.execute("""select * from application where lower(username)=?""",
+                (username.lower(),))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -328,7 +336,7 @@ class DBManager():
         c.close()
         return
 
-    def get_user_info(self, userid):
+    def get_user_info(self, userid=0, username=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/user.db')
@@ -336,7 +344,15 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from user where id=?""", (userid,))
+        # Search by userid.
+        if userid:
+            c.execute("""select * from user where id=?""", (userid,))
+        # Search by username.
+        elif username:
+            c.execute("""select * from user where lower(username)=?""",
+                (username.lower(),))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -395,7 +411,7 @@ class DBManager():
         c.close()
         return
 
-    def get_usergroup_info(self, usergroupid):
+    def get_usergroup_info(self, usergroupid=0, name=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/user.db')
@@ -403,7 +419,16 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from usergroup where id=?""", (usergroupid,))
+        # Search by usergroupid.
+        if usergroupid:
+            c.execute("""select * from usergroup where id=?""",
+                (usergroupid,))
+        # Search by name.
+        elif name:
+            c.execute("""select * from usergroup where lower(name)=?""",
+                (name.lower(),))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -466,7 +491,7 @@ class DBManager():
         c.close()
         return
 
-    def get_document_info(self, docid):
+    def get_document_info(self, docid=0, name='', parent_dir=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/document.db')
@@ -474,7 +499,15 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from document where id=?""", (docid,))
+        # Search by docid.
+        if docid:
+            c.execute("""select * from document where id=?""", (docid,))
+        # Search by name and parent_dir.
+        elif name and parent_dir:
+            c.execute("""select * from document where
+                lower(name)=? and parent_dir=?""", (name.lower(), parent_dir))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -541,7 +574,7 @@ class DBManager():
         c.close()
         return
 
-    def get_comment_info(self, commentid):
+    def get_comment_info(self, commentid=0, docid=0, userid=0, content=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/document.db')
@@ -549,7 +582,16 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from comment where id=?""", (commentid,))
+        # Search by commentid.
+        if commentid:
+            c.execute("""select * from comment where id=?""", (commentid,))
+        # Search by docid and userid and content.
+        elif docid and userid and content:
+            c.execute("""select * from comment where
+                docid=? and userid=? and lower(content)=?""",
+                (docid, userid, content.lower()))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -608,7 +650,8 @@ class DBManager():
         c.close()
         return
 
-    def get_invitation_info(self, conn, invitationid):
+    def get_invitation_info(self, invitationid=0,
+        docid=0, userid_from=0, userid_to=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/document.db')
@@ -616,7 +659,17 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from invitation where id=?""", (invitationid,))
+        # Search by invitationid.
+        if invitationid:
+            c.execute("""select * from invitation where id=?""",
+                (invitationid,))
+        # Search by docid and userid_from and userid_to.
+        elif docid and userid_from and userid_to:
+            c.execute("""select * from invitation where
+                docid=? and userid_from=? and userid_to=?""",
+                (docid, userid_from, userid_to))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -682,7 +735,7 @@ class DBManager():
         c.close()
         return
 
-    def get_complaint_info(self, complaintid):
+    def get_complaint_info(self, complaintid=0, docid=0, userid=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/document.db')
@@ -690,7 +743,17 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from complaint where id=?""", (complaintid,))
+        # Search by complaintid.
+        if complaintid:
+            c.execute("""select * from complaint where id=?""",
+                (complaintid,))
+        # Search by docid and userid.
+        elif docid and userid:
+            c.execute("""select * from complaint where
+                docid=? and userid=?""",
+                (docid, userid))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -744,7 +807,7 @@ class DBManager():
         c.close()
         return
 
-    def get_member_info(self, memberid):
+    def get_member_info(self, memberid=0, userid=0, docid=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/document.db')
@@ -752,7 +815,15 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from member where id=?""", (memberid,))
+        # Search by memberid.
+        if memberid:
+            c.execute("""select * from member where id=?""", (memberid,))
+        # Search by docid and userid.
+        elif userid and docid:
+            c.execute("""select * from member where
+                userid=? and docid=?""", (userid, docid))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -813,7 +884,7 @@ class DBManager():
         c.close()
         return
 
-    def get_directory_info(self, directoryid):
+    def get_directory_info(self, directoryid=0, name='', parent_dir=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/document.db')
@@ -821,7 +892,17 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from directory where id=?""", (directoryid,))
+        # Search by directoryid.
+        if directoryid:
+            c.execute("""select * from directory where id=?""",
+                (directoryid,))
+        # Search by name and parent_dir.
+        elif name and parent_dir:
+            c.execute("""select * from directory where
+                lower(name)=? and parent_dir=?""",
+                (name.lower(), parent_dir))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -1423,7 +1504,7 @@ class DBManager():
         c.close()
         return
 
-    def get_stop_words_info(self, wordid):
+    def get_stop_words_info(self, wordid=0, word=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/index.db')
@@ -1431,7 +1512,15 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from stop_words where id=?""", (wordid,))
+        # Search by wordid.
+        if wordid:
+            c.execute("""select * from stop_words where id=?""", (wordid,))
+        # Search by word.
+        elif word:
+            c.execute("""select * from stop_words where lower(word)=?""",
+                (word.lower(),))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -1483,7 +1572,7 @@ class DBManager():
         c.close()
         return
 
-    def get_index_word_info(self, wordid):
+    def get_index_word_info(self, wordid=0, word=''):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/index.db')
@@ -1491,7 +1580,15 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from index_word where id=?""", (wordid,))
+        # Search by wordid.
+        if wordid:
+            c.execute("""select * from index_word where id=?""", (wordid,))
+        # Search by word.
+        elif word:
+            c.execute("""select * from index_word where lower(word)=?""",
+                (word.lower(),))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -1546,7 +1643,8 @@ class DBManager():
         c.close()
         return
 
-    def get_index_ref_info(self, refid):
+    def get_index_ref_info(self, refid=0,
+        wordid=0, docid=0, line=0, column=0):
         # At this point, the user database must exist, so create a database
         # connection to the file.
         conn = connect(self.BASE_DIR+'/index.db')
@@ -1554,7 +1652,16 @@ class DBManager():
         # Create the cursor to preform the queries.
         c = conn.cursor()
 
-        c.execute("""select * from index_ref where id=?""", (refid,))
+        # Search by refid.
+        if refid:
+            c.execute("""select * from index_ref where id=?""", (refid,))
+        # Search by wordid and docid and line and column.
+        elif wordid and docid and line and column:
+            c.execute("""select * from index_ref where
+                wordid=? and docid=? and line=? and column=?""",
+                (wordid, docid, line, column))
+
+        # Get 1 result, if any exist.
         row = c.fetchone()
 
         if row:
@@ -1750,4 +1857,4 @@ if __name__ == "__main__":
 #    q = {'username': 'admin'}
 #    s = ['email', 'infraction']
 #    print dbm.select_table_user(q, s)
-    print dbm.get_application_info(20)
+    print dbm.get_user_info(username='ash')
