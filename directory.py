@@ -32,7 +32,7 @@ class DirectoryManager:
 
     def create_directory(self, directoryid):
         # Get the local file system path for the supplied directory.
-        path_logical, path_physical = self.get_document_path(directoryid)
+        path_logical, path_physical = self.get_directory_path(directoryid)
 
         # The supplied folder name does not exist at the supplied directory.
         if not os.path.exists('%s' % (path_physical,)):
