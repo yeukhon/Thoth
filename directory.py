@@ -42,3 +42,18 @@ class DirectoryManager:
         # The supplied folder name does exist at the supplied directory.
         else:
             return False
+
+    def get_directory_directories(self, directoryid):
+        # Query for all the directories in the supplied directory.
+        self.c.execute("""select * from directory where parent_dir=?""",
+            (directoryid,))
+
+        # Return directories as a list.
+        res = []
+        for row in self.c:
+            # Create a dictionary with the results and add the dictionary to
+            # the list.
+            res.append({'id': row[0], 'name': row[1], 'parent_dir': row[2]})
+
+        # Return the list of results.
+        return res
