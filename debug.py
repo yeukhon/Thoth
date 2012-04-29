@@ -37,9 +37,10 @@ if __name__ == "__main__":
 
     # Add a document to the dB at the directory 'Team'.
     ash.manage_DB.insert_document('Pikachu', teamid, ash.info['id'],
-        last_mod_user, last_mod_time, size)
+        infraction, last_mod_user, last_mod_time, size)
     # Get the 'id' of the newly created document.
-    pikaid = ash.manage_DB.get_document_info(name='Pikachu', parent_dir=teamid)
+    pikaid = ash.manage_DB.get_document_info(
+        name='Pikachu', parent_dir=teamid)['id']
     # Create the newly inserted document at the directory 'Team'.
     manage_Docs.create_document(pikaid, teamid)
     # Create an instance of the Document class for the newly created document.
@@ -67,9 +68,9 @@ if __name__ == "__main__":
         pending)
 
     # Index the document.
-    pika.manage_Docs.index_document()
+    manage_Docs.index_document(pika.info['id'])
 
     # Search the document.
-    res = pika.manage_Indx.search('please')
+    res = manage_Docs.manage_Indx.search('please')
     for i in res:
         print i['branch_word'], i['line'], i['column']

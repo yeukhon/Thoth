@@ -5,7 +5,7 @@ from invitation_win import Invitation_Viewer_Window
 from application_win import App_Viewer_Window
 from login_win import Login_Window
 from textbox import TextBox
-from document import Document
+from document import Document, DocumentManager
 
 
 class Homepage:
@@ -14,6 +14,7 @@ class Homepage:
     def __init__(self, master, user):
         self.user = user
         self.user.manage_DB.check()
+        self.manage_Docs = DocumentManager(self.user.manage_DB)
 
         # Child Windows:
         self.window_login = Login_Window(master, self, self.user)
@@ -22,8 +23,8 @@ class Homepage:
             master, self, self.user)
         self.window_applications = App_Viewer_Window(master, self, self.user)
 
-        self.curr_directory = {'name': '', 'parent_dir': '1'}
-        self.curr_directory_contents = []
+        self.directory = {'name': '', 'parent_dir': '1'}
+        self.directory_contents = []
 
         self.font = ("Helvetica", "20", "normal")
 
@@ -58,11 +59,11 @@ class Homepage:
         self.frame_dir.columnconfigure(1, weight=1)
 
         # Displays the current directory
-        self.frame_dir_ctrl_label = Label(
+        self.frame_directory_label = Label(
             self.frame_dir,
-            text=self.curr_directory['name'] + '/',
+            text=self.directory['name'] + '/',
             fg='#ffa500')
-        self.frame_dir_ctrl_label.grid(
+        self.frame_directory_label.grid(
             row=1, column=0, sticky=N + E + S + W)
 
         # Button to go up a directory
@@ -166,8 +167,6 @@ class Homepage:
         return
 
     def init_menus(self):
-        """Initializes the FILE, EDIT, and ABOUT menus."""
-
         # Create the menubar that will hold all the menus and thier items.
         self.menubar = Menu(self.frame)
 
@@ -183,23 +182,35 @@ class Homepage:
         self.top["menu"] = self.menubar
         return
 
-    def update_directory(self, dirid):
-        self.curr_directory = self.user.manage_DB.get_directory_info(dirid)
-        self.curr_directory_contents_dir = self.user.manage_Dir.get_dir_dir(
-            dirid)
-        self.curr_directory_contents_doc = self.user.manage_Docs.get_directory_documents(dirid)
+    def update_directory(self, directoryid):
+        # Get the information for the supplied directory.
+        self.directory = self.user.manage_DB.get_directory_info(directoryid)
 
-        # Remove the old items from the list.
-        for label in self.curr_directory_contents:
+        # Get a list of the directories in the supplied directory.
+        self.directory_dir = self.user.manage_Dir.get_directory_directories(
+            directoryid)
+        # Get a list of the documents in the supplied directory.
+        self.directory_doc = self.manage_Docs.get_directory_documents(
+            directoryid)
+
+        # Remove the labels from the previous directory from the grid.
+        for label in self.directory_contents:
             label[0].grid_remove()
             label[1].grid_remove()
-        self.curr_directory_contents = []
+        # Reset the directory contents list to empty.
+        self.directory_contents = []
 
-        self.frame_dir_ctrl_label.configure(
-            text=self.curr_directory['name'] + '/')
+        # Display the current directory.
+        self.frame_directory_label.configure(
+            text=self.directory['name'] + '/')
+
+        # Contents of the directory start on row 2.
         start = 2
-        for row in self.curr_directory_contents_dir:
-            self.curr_directory_contents.append([
+        for row in self.directory_dir:
+            # Each entry of the directory_contents list will be the entire row
+            # of the grid. Each row is composed of a Label for that directory
+            # and a Button to move into that directory.
+            self.directory_contents.append([
                 Label(
                     self.frame_dir,
                     fg='#0000ff',
@@ -209,14 +220,20 @@ class Homepage:
                     text='View',
                     relief=RAISED,
                     command=lambda i=row['id']: self.update_directory(i))])
-            self.curr_directory_contents[-1][0].grid(
+            # Add the Label to the row specified by 'start', column 0
+            self.directory_contents[-1][0].grid(
                 row=start, column=0, sticky=N + E + S + W)
-            self.curr_directory_contents[-1][1].grid(
+            # Add the Button to the row specified by 'start', column 1
+            self.directory_contents[-1][1].grid(
                 row=start, column=1, sticky=N + E + S + W)
+            # Increment 'start'.
             start += 1
 
-        for row in self.curr_directory_contents_doc:
-            self.curr_directory_contents.append([
+        for row in self.directory_doc:
+            # Each entry of the directory_contents list will be the entire row
+            # of the grid. Each row is composed of a Label for that document
+            # and a Button see the information about the document.
+            self.directory_contents.append([
                 Label(
                     self.frame_dir,
                     fg='#3399FF',
@@ -225,18 +242,24 @@ class Homepage:
                     text='Info',
                     relief=RAISED,
                     command=lambda i=row['id']: self.open_document(i))])
-            self.curr_directory_contents[-1][0].grid(
+            # Add the Label to the row specified by 'start', column 0
+            self.directory_contents[-1][0].grid(
                 row=start, column=0, sticky=N + E + S + W)
-            self.curr_directory_contents[-1][1].grid(
+            # Add the Button to the row specified by 'start', column 1
+            self.directory_contents[-1][1].grid(
                 row=start, column=1, sticky=N + E + S + W)
+            # Increment 'start'.
             start += 1
 
-        curr_dir = self.user.manage_Dir.get_dir_path(
-            self.curr_directory['id'])
+        # Get the logical path for the supplied directory.
+        path_logical = self.user.manage_Dir.get_directory_path(
+            self.directory['id'])[0]
+        # Set the Label to create a directory at the logical path.
         self.frame_create_banner_dir.config(
-            text='Directory @ ' + curr_dir + ':')
+            text='Directory @ ' + path_logical + ':')
+        # Set the Label to create a document at the logical path.
         self.frame_create_banner_doc.config(
-            text='Document @ ' + curr_dir + ':')
+            text='Document @ ' + path_logical + ':')
         return
 
     def open_document(self, docid):
@@ -246,44 +269,113 @@ class Homepage:
         return
 
     def handler_directory_up(self):
-        if self.curr_directory['parent_dir'] != 0:
-            self.update_directory(self.curr_directory['parent_dir'])
+        # The current directory has a parent_dir.
+        if self.directory['parent_dir']:
+            # Update the Label to show the contents of parent_dir.
+            self.update_directory(self.directory['parent_dir'])
         return
 
     def handler_create_directory(self):
-        res_add = self.user.manage_Dir.add_directory(
-            self.entry_dirname.get(), self.curr_directory['id'])
-        res_cre = 1
-        if res_add[0]:
-            res_cre = self.user.manage_Dir.create_directory(
-                res_add[1], self.curr_directory['id'])
-            self.update_directory(self.curr_directory['id'])
-            self.entry_dirname.delete(0, len(self.entry_dirname.get()))
+        # The user is of the 'Regular Users' or 'Super User' usergroup.
+        if self.user.info['usergroup'] <= 2:
+            # Get the name of the directory the user wants to create.
+            name = self.entry_dirname.get()
+            # Insert a directory in the dB at the current directory.
+            res = self.user.manage_DB.insert_directory(
+                name, self.directory['id'])
 
-        if not res_add[0] or not res_cre:
+            # The directory does not already exist in the dB.
+            if res:
+                # Get the 'id' of the newly created directory.
+                newid = self.user.manage_DB.get_directory_info(
+                    name=name, parent_dir=self.directory['id'])['id']
+                # Create the directory.
+                res = self.user.manage_Dir.create_directory(newid)
+
+                # The directory does not already exist on the file system.
+                if res:
+                    # Delete the directory name from the creation box.
+                    self.entry_dirname.delete(0, len(name))
+                    # Update the display to show the newly created directory.
+                    self.update_directory(self.directory['id'])
+                # The directory already exist on the file system.
+                else:
+                    # Show the appropriate error message.
+                    tkMessageBox.showerror(
+                        'Error Creating Directory!',
+                        'Directory "' + name +
+                        '" already exist on the file system!')
+            # The directory already exist in the dB.
+            else:
+                # Show the appropriate error message.
+                tkMessageBox.showerror(
+                    'Error Creating Directory!',
+                    'Directory "' + name +
+                    '" already exist in the database!')
+        # User is of the 'Suspended' usergroup.
+        elif self.user.info['usergroup'] == 3:
+            # Show the appropriate error message.
             tkMessageBox.showerror(
-                'Error Creating Directory!',
-                'Directory "' + self.entry_dirname.get() + '" already exist!')
+                'Insufficient Privileges',
+                'Your account has been suspended!')
+        # User is of the 'Visitor' usergroup.
+        else:
+            # Show the appropriate error message.
+            tkMessageBox.showerror(
+                'Insufficient Privileges',
+                'You must login before you can preform this action!')
 
         return
 
     def handler_create_document(self):
-        res_add = self.user.manage_Docs.add_document(
-            self.entry_docname.get(),
-            self.curr_directory['id'],
-            self.user.info['id'],
-            0)
-        res_cre = [1]
-        if res_add[0]:
-            self.user.manage_Docs.create_document(
-                res_add[1], self.curr_directory['id'])
-            self.update_directory(self.curr_directory['id'])
-            self.entry_docname.delete(0, len(self.entry_docname.get()))
+        # The user is of the 'Regular Users' or 'Super User' usergroup.
+        if self.user.info['usergroup'] <= 2:
+            # Get the name of the document the user wants to create.
+            name = self.entry_docname.get()
+            # Insert a document in the dB at the current directory.
+            res = self.user.manage_DB.insert_document(
+                name, self.directory['id'], self.user.info['id'], 0, 0, 0, 0)
 
-        if not res_add[0] or not res_cre[0]:
+            # The document does not already exist in the dB.
+            if res:
+                # Get the 'id' of the newly created document.
+                newid = self.user.manage_DB.get_document_info(
+                    name=name, parent_dir=self.directory['id'])['id']
+                # Create the document.
+                res = self.manage_Docs.create_document(newid, self.directory['id'])
+
+                # The document does not already exist on the file system.
+                if res:
+                    # Delete the document name from the creation box.
+                    self.entry_docname.delete(0, len(name))
+                    # Update the display to show the newly created document.
+                    self.update_directory(self.directory['id'])
+                # The document already exist on the file system.
+                else:
+                    # Show the appropriate error message.
+                    tkMessageBox.showerror(
+                        'Error Creating Document!',
+                        'Document "' + name +
+                        '" already exist on the file system!')
+            # The document already exist in the dB.
+            else:
+                # Show the appropriate error message.
+                tkMessageBox.showerror(
+                    'Error Creating Document!',
+                    'Document "' + name +
+                    '" already exist in the database!')
+        # User is of the 'Suspended' usergroup.
+        elif self.user.info['usergroup'] == 3:
+            # Show the appropriate error message.
             tkMessageBox.showerror(
-                'Error Creating Document!',
-                'Document "' + self.entry_docname.get() + '" already exist!')
+                'Insufficient Privileges',
+                'Your account has been suspended!')
+        # User is of the 'Visitor' usergroup.
+        else:
+            # Show the appropriate error message.
+            tkMessageBox.showerror(
+                'Insufficient Privileges',
+                'You must login before you can preform this action!')
 
         return
 

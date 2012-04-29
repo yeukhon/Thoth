@@ -499,11 +499,11 @@ class DBManager():
             size integer
         )""")
 
-        # Not necessary, but insert a test document.
-        t = ('Test.txt', 0, 1, 0, 1, time(), 0)
-        c.execute("""insert into document values (
-            NULL,
-            ?, ?, ?, ?, ?, ?, ? )""", t)
+#        # Not necessary, but insert a test document.
+#        t = ('Test.txt', 0, 1, 0, 1, time(), 0)
+#        c.execute("""insert into document values (
+#            NULL,
+#            ?, ?, ?, ?, ?, ?, ? )""", t)
 
         # Commit all the changes we have made to the user database.
         conn.commit()
