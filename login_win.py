@@ -54,14 +54,33 @@ class Login_Window:
         self.frame_login.grid(row=0)
         return
 
-    def user_login(self, event):
-        res = self.user.manage_User.user_in_DB(
-            self.username.get(), self.password.get())
+    def user_login(self, event=0):
+        # Get the username the user typed.
+        name = self.username.get()
+        # Get the password the user typed and md5 it.
+        password = new(self.password.get()).hexdigest()
 
-        if res[0]:
-            self.parent.user.update_user(res[1])
-            self.handler_goto_homepage()
+        # Get the information for the supplied username.
+        res = self.user.manage_DB.get_user_info(
+            username=name)
+
+        # The supplied username is in the database.
+        if res:
+            # The supplied password matches the password in the database.
+            if res['password'] == password:
+                # Update the User instance with the new user information.
+                self.parent.user.update_user(res['id'])
+                self.parent.frame_cpanel_user.config(text=res['username'])
+                # Display the homepage.
+                self.handler_goto_homepage()
+            # The supplied password does not match the password in the database.
+            else:
+                # Reset the password field.
+                self.password.set('')
+        # The supplied username is not in the database.
         else:
+            # Reset the username and password field.
+            self.username.set('')
             self.password.set('')
         return
 

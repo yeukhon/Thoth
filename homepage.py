@@ -62,7 +62,7 @@ class Homepage:
         self.frame_directory_label = Label(
             self.frame_dir,
             text=self.directory['name'] + '/',
-            fg='#ffa500')
+            fg='#ffa500', bg='#333')
         self.frame_directory_label.grid(
             row=1, column=0, sticky=N + E + S + W)
 
@@ -128,8 +128,9 @@ class Homepage:
 
         self.frame_cpanel_user = Label(
             self.frame_cpanel,
-            text=self.user.info['username'])
-        self.frame_cpanel_user.grid()
+            text=self.user.info['username'],
+            fg='#ffa500', bg='#333')
+        self.frame_cpanel_user.grid(sticky=N + E + S + W)
 
         # View Your Documents Button
         self.frame_cpanel_ownerdocs = Button(
