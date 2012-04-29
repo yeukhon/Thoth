@@ -18,7 +18,7 @@ class Homepage:
 
         # Child Windows:
         self.window_login = Login_Window(master, self, self.user)
-        self.window_editor = TextBox(master)
+        self.window_editor = TextBox(master, self)
         self.window_invitations = Invitation_Viewer_Window(
             master, self, self.user)
         self.window_applications = App_Viewer_Window(master, self, self.user)
@@ -343,7 +343,8 @@ class Homepage:
                 newid = self.user.manage_DB.get_document_info(
                     name=name, parent_dir=self.directory['id'])['id']
                 # Create the document.
-                res = self.manage_Docs.create_document(newid, self.directory['id'])
+                res = self.manage_Docs.create_document(
+                    newid, self.directory['id'])
 
                 # The document does not already exist on the file system.
                 if res:

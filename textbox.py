@@ -8,7 +8,9 @@ import re, string
 class TextBox():
     BASE_DIR = "dbs"
 
-    def __init__(self, master):
+    def __init__(self, master, parent):
+        self.parent = parent
+
         # Time interval at whic we want the line numbers to update.
         self.update_interval = 300
 
@@ -153,9 +155,13 @@ class TextBox():
 
         # File Pulldown menu, contains "Open", "Save", and "Exit" options.
         self.filemenu = Menu(self.menubar, tearoff=0)
-        if self.document.is_memeber(self.user.info['id']):
+        if self.document.manage_Docs.is_member(
+            self.document.info['id'], self.user.info['id']):
             self.filemenu.add_command(label="Save", command=self.handler_save_file)
-            self.filemenu.add_separator()
+        elif self.user.info['usergroup'] == 4:
+            self.filemenu.add_command(label="Login", command=self.handler_login)
+
+        self.filemenu.add_separator()
         self.filemenu.add_command(label="Exit", command=self.file_exit)
         self.menubar.add_cascade(label="File", menu=self.filemenu)
 
@@ -172,8 +178,14 @@ class TextBox():
 
         self.set_content_from_doc(self.document)
 
-        if not self.document.is_memeber(self.user.info['id']):
-            self.text_content.config(state=DISABLED)
+        # User is not owner of the document or a member of the supplied
+        # document.
+        if not self.document.manage_Docs.is_member(
+            self.document.info['id'], self.user.info['id']):
+            self.text_content.config(state=DISABLED,
+                bg= 'lightgrey', fg='black')
+        else:
+            self.text_content.config(state=NORMAL, bg='#333', fg='#FFF')
 
         self.init_menus()
         return
@@ -185,7 +197,7 @@ class TextBox():
 
         self.text_content.insert('1.0', contents)
 
-        self.create_autocompleteDB(self.text_content.get('1.0', END))
+        self.document.init_autocompleteDB()
         self.declare_misspell()
 
         return
@@ -195,6 +207,11 @@ class TextBox():
         contents = self.text_content.get('1.0', END)
         fhandle.write(contents)
         fhandle.close()
+        return
+
+    def handler_login(self):
+        self.frame.grid_remove()
+        self.parent.window_login.frame.grid()
         return
 
     def file_exit(self):
@@ -231,7 +248,7 @@ class TextBox():
 
             # Get the suggested word, sorted, so the shortest word
             # will be at the beginning of the list.
-            sug = self.suggest_autocomplete(fragment)
+            sug = self.document.suggest_word_autocompleteDB(fragment)
 
             # There is a suggestion.
             if sug != '':
@@ -283,7 +300,7 @@ class TextBox():
                 self.ac_ideal = ''
 
             # Check whether the last word is misspelled.
-            self.handle_misspell(verbose=True)
+            self.handle_misspell(verbose=False)
 
         # User pressed the return key.
         elif event.keysym == 'Return':
@@ -301,6 +318,9 @@ class TextBox():
 
                 # Nulls the newline character from the 'Return' keystroke.
                 return "break"
+
+            # Check whether the last word is misspelled.
+            self.handle_misspell(verbose=False)
 
         # User pressed the backspace key.
         elif event.keysym == 'BackSpace':
@@ -385,7 +405,7 @@ class TextBox():
             self.text_content.tag_remove(
                 "misspelled", index, "%s+%dc" % (index, len(word)))
 
-            self.add_autocompleteDB(word)
+            self.document.insert_word_autocompleteDB(word)
 
         # The word is not valid.
         else:
