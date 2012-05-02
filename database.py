@@ -234,101 +234,6 @@ class DBManager():
         c.close()
         return
 
-    def get_application_info(self, appid=0, where={}, verbose=False):
-        # At this point, the application database must exist, so create a
-        # database connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/user.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by userid.
-        if appid:
-            # Query for the supplied application id.
-            c.execute("""select * from application where id=?""", (appid,))
-            
-            #~ # Get only 1 result, if any.
-            #~ row = c.fetchone()
-            #~ 
-            #~ # An application was found.
-            #~ if row:
-                #~ # Return a dictionary of the found information. 
-                #~ return {'id': row[0], 'username': row[1], 'password': row[2],
-                    #~ 'email': row[3], 'usergroup': row[4], 'content': row[5],
-                    #~ 'time': row[6], 'status': row[7]}
-            #~ # An application was not found.
-            #~ else:
-                #~ return {}
-            
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['username', 'password', 'email', 'usergroup', 'content',
-                'time', 'status']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from application where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'username': row[1], 'password': row[2],
-                'email': row[3], 'usergroup': row[4], 'content': row[5],
-                'time': row[6], 'status': row[7]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_application(
-        self, username, password, email, usergroup, content, time, status):
-        # There does not already exist an application in the database from
-        # this user.
-        if not self.get_application_info(where={'username': username}):
-            # At this point, the application database must exist, so create a
-            # database connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/user.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into application values (
-                NULL, ?, ?, ?, ?, ?, ?, ?)""",
-                (username, password, email, usergroup, content, time, status))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # There already exist an application in the database from this user.
-        else:
-            return False
-
     def init_table_user(self, conn):
         """Create the user table in the user database and insert the default
         values.
@@ -377,93 +282,6 @@ class DBManager():
         c.close()
         return
 
-    def get_user_info(self, userid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/user.db')
-        conn.row_factory = sqlite3.Row
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by userid.
-        if userid:
-            c.execute("""select * from user where id=?""", (userid,))
-
-            # Get 1 result, if any.
-            res = c.fetchone()
-
-            # Close the cursor to the database and then close the database.
-            c.close()
-            conn.close()
-
-            # If there is a result, return the result as a dictionary, else
-            # return an empty dictionary.
-            return dict(res) if res else {}
-        
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['username', 'password', 'email', 'usergroup',
-                'infraction']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from user where ' + query,
-                    where.values())
-
-                # Get all the results, if any.
-                res = c.fetchall()
-
-                # Close the cursor to the database and then close the database.
-                c.close()
-                conn.close()
-
-                # Return all the results as a list of dictionaries, where each
-                # dictionary is a row of the result.
-                return [dict(row) for row in res]
-                
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-    def insert_user(self, username, password, email, usergroup, infraction):
-        # There does not already exist a user with the supplied username.
-        if not self.get_user_info(where={'username': username}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/user.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into user values (
-                NULL, ?, ?, ?, ?, ?)""",
-                (username, password, email, usergroup, infraction))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # There already exist a user with the supplied username.
-        else:
-            return False
-
     def init_table_usergroup(self, conn):
         """Create the user table in the usergroup database and insert the
         default values.
@@ -489,83 +307,6 @@ class DBManager():
         # Close the cursor that we created to the database.
         c.close()
         return
-
-    def get_usergroup_info(self, usergroupid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/user.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by usergroupid.
-        if usergroupid:
-            c.execute("""select * from usergroup where id=?""",
-                (usergroupid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['name']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from usergroup where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res = {'id': row[0], 'name': row[1]}
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_usergroup(self, name):
-        # There does not already exist a usergroup with the supplied name.
-        if not self.get_usergroup_info(where={'name': name}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/user.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into usergroup values (NULL, ?)""", (name,))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # There already exist a usergroup with the supplied name.
-        else:
-            return False
 
     def init_table_document(self, conn):
         """Create the document table in the usergroup database and insert the
@@ -600,93 +341,6 @@ class DBManager():
         c.close()
         return
 
-    def get_document_info(self, docid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by docid.
-        if docid:
-            c.execute("""select * from document where id=?""", (docid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['name', 'parent_dir', 'owner', 'infraction',
-                'last_mod_user', 'last_mod_time', 'size']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from document where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'name': row[1], 'parent_dir': row[2],
-                'owner': row[3], 'infraction': row[4], 'last_mod_user': row[5],
-                'last_mod_time': row[6], 'size': row[7]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_document(
-        self, name, parent_dir, owner, infraction, last_mod_user,
-        last_mod_time, size):
-        # There does not already exist a document in the supplied directory
-        # with the supplied name.
-        if not self.get_document_info(where={
-            'name': name, 'parent_dir': parent_dir}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into document values (
-                NULL, ?, ?, ?, ?, ?, ?, ? )""",
-                (name, parent_dir, owner, infraction, last_mod_user,
-                last_mod_time, size))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # There already exist a document in the supplied directory with the
-        # supplied name.
-        else:
-            return False
-
     def init_table_comment(self, conn):
         """Create the comment table in the usergroup database and insert the
         default values.
@@ -717,88 +371,6 @@ class DBManager():
         c.close()
         return
 
-    def get_comment_info(self, commentid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by commentid.
-        if commentid:
-            c.execute("""select * from comment where id=?""", (commentid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['docid', 'userid', 'content', 'time']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from comment where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'docid': row[1], 'userid': row[2],
-                'content': row[3], 'time': row[4]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_comment(self, docid, userid, content, time):
-        # There does not already exist a comment on the supplied document from
-        # the supplied user with the supplied content.
-        if not self.get_comment_info(where={
-            'docid': docid, 'userid': userid, 'content': content}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into comment values
-                (NULL, ?, ?, ?, ?)""",
-                (docid, userid, content, time))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # There already exist a comment on the supplied document from the
-        # supplied user with the supplied content.
-        else:
-            return False
-
     def init_table_invitation(self, conn):
         """Create the invitation table in the usergroup database and insert
         the default values.
@@ -824,93 +396,6 @@ class DBManager():
         # Close the cursor that we created to the database.
         c.close()
         return
-
-    def get_invitation_info(self, invitationid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/user.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by invitationid.
-        if invitationid:
-            c.execute("""select * from invitation where id=?""",
-                (invitationid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['docid', 'userid_from', 'userid_to', 'content', 'time',
-                'status']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from invitation where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'docid': row[1], 'userid_from': row[2],
-                'userid_to': row[3], 'content': row[4], 'time': row[5],
-                'status': row[6]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_invitation(
-        self, docid, userid_from, userid_to, content, time, status):
-        # There does not already exist a invitation to the supplied document
-        # from the supplied user to the supplied recipient.
-        if not self.get_invitation_info(where={
-            'docid': docid, 'userid_from': userid_from, 
-            'userid_to': userid_to}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/user.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into invitation values
-                (NULL, ?, ?, ?, ?, ?, ?)""",
-                (docid, userid_from, userid_to, content, time, status))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # There already exist a invitation to the supplied document from the
-        # supplied user to the supplied recipient.
-        else:
-            return False
 
     def init_table_complaint(self, conn):
         """Create the complaint table in the usergroup database and insert the
@@ -943,89 +428,6 @@ class DBManager():
         c.close()
         return
 
-    def get_complaint_info(self, complaintid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by complaintid.
-        if complaintid:
-            c.execute("""select * from complaint where id=?""",
-                (complaintid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['docid', 'userid', 'content', 'time', 'status']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from complaint where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'docid': row[1], 'userid': row[2],
-                'content': row[3], 'time': row[4], 'status': row[5]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_complaint(self, docid, userid, content, time, status):
-        # There does not already exist a complaint on the supplied document
-        # from the supplied user.
-        if not self.get_complaint_info(where={
-                'docid': docid, 'userid': userid}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into complaint values
-                (NULL, ?, ?, ?, ?, ?)""",
-                (docid, userid, content, time, status))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # There already exist a complaint on the supplied document from the
-        # supplied user.
-        else:
-            return False
-
     def init_table_member(self, conn):
         """Create the member table in the usergroup database and insert the
         default values.
@@ -1046,85 +448,6 @@ class DBManager():
         # Close the cursor that we created to the database.
         c.close()
         return
-
-    def get_member_info(self, memberid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by memberid.
-        if memberid:
-            c.execute("""select * from member where id=?""", (memberid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['userid', 'docid']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from member where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'userid': row[1], 'docid': row[2]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_member(self, userid, docid):
-        # The supplied user is not already a member of the supplied document.
-        if not self.get_member_info(where={
-            'userid': userid, 'docid': docid}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into member values
-                (NULL, ?, ?)""",
-                (userid, docid))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # The supplied user is already a member of the supplied document.
-        else:
-            return False
 
     def init_table_directory(self, conn):
         """Create the directory table in the usergroup database and insert the
@@ -1154,87 +477,6 @@ class DBManager():
         # Close the cursor that we created to the database.
         c.close()
         return
-
-    def get_directory_info(self, directoryid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by directoryid.
-        if directoryid:
-            c.execute("""select * from directory where id=?""",
-                (directoryid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['name', 'parent_dir']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from directory where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'name': row[1], 'parent_dir': row[2]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_directory(self, name, parent_dir=1):
-        # The directory in the supplied folder with the supplied name does not
-        # already exist.
-        if not self.get_directory_info(where={
-            'name': name, 'parent_dir': parent_dir}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/document.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into directory values
-                (NULL, ?, ?)""", (name, parent_dir))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # The directory in the supplied folder with the supplied name already
-        # exist.
-        else:
-            return False
 
     def init_table_stop_words(self, conn):
         """Create the stop_words table in the user database and insert the
@@ -1807,83 +1049,6 @@ class DBManager():
         c.close()
         return
 
-    def get_stop_words_info(self, wordid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/index.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by wordid.
-        if wordid:
-            c.execute("""select * from stop_words where id=?""", (wordid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['word']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from stop_words where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'word': row[1]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_stop_words(self, word):
-        # The supplied word does not already exist in the table.
-        if not self.get_stop_words_info(where={'word': word}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/index.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into stop_words values
-                (NULL, ?)""", (word,))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # The supplied word already exist in the table.
-        else:
-            return False
-
     def init_table_index_word(self, conn):
         """Create the index table in the usergroup database and insert the
         default values.
@@ -1904,83 +1069,6 @@ class DBManager():
         # Close the cursor that we created to the database.
         c.close()
         return
-
-    def get_index_word_info(self, wordid=0, where={}, verbose=False):
-        # At this point, the user database must exist, so create a database
-        # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/index.db')
-
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by wordid.
-        if wordid:
-            c.execute("""select * from index_word where id=?""", (wordid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['wordid']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from index_word where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'word': row[1]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_index_word(self, word):
-        # The supplied word does not already exist in the table.
-        if not self.get_index_word_info(where={'word': word}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/index.db')
-
-            # Create the cursor to preform the queries.
-            c = conn.cursor()
-
-            c.execute("""insert into index_word values
-                (NULL, ?)""", (word,))
-
-            # Commit all the changes we have made to the application database.
-            conn.commit()
-
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # The supplied word already exist in the table.
-        else:
-            return False
 
     def init_table_index_ref(self, conn):
         """Create the index_ref table in the usergroup database and insert the
@@ -2007,85 +1095,32 @@ class DBManager():
         c.close()
         return
 
-    def get_index_ref_info(self, refid=0, where={}, verbose=False):
+    def init_table_usrdic(self, userid):
+        """Create the userid table in the usrdic database and insert the
+        default values.
+        @param  conn    The connection to the database."""
         # At this point, the user database must exist, so create a database
         # connection to the file.
-        conn = sqlite3.connect(self.BASE_DIR + '/index.db')
+        conn = sqlite3.connect('%s/usrdic.db' % self.BASE_DIR)
 
-        # Create the cursor to preform the queries.
-        c = conn.cursor()
-
-        # Search by refid.
-        if refid:
-            c.execute("""select * from index_ref where id=?""", (refid,))
-        # Search by other parameters.
-        elif where:
-            # List of all valid searchable parameters.
-            valid = ['wordid', 'docid', 'line', 'column', 'branch_word']
-            # Find the keys that exist in the supplied dictionary, but not in
-            # the list of value keys.
-            minus = [ item for item in where.keys() if item not in valid]
-            if verbose: print 'Invalid keys:', minus
-
-            # All the supplied keys are valid.
-            if not minus:
-                # Generate a query string from the supplied keys.
-                query = '=? AND '.join(where.keys()) + '=?'
-                if verbose: print 'Query:', query, '\nValues:', where.values()
-
-                c.execute('select * from index_ref where ' + query,
-                    where.values())
-            # A supplied key is invalid, so return a None type.
-            else:
-                return None
-        # No searchable information was supplied, so return a None type.
-        else:
-            return None
-
-        # Get all the results, if any exist.
-        rows = c.fetchall()
-
-        # Create the empty list that will hold the results.
-        res= []
-        for row in rows:
-            # Add the current row to the response as a dictionary.
-            res.append({'id': row[0], 'wordid': row[1], 'docid': row[2],
-                'line': row[3], 'column': row[4], 'branch_word': row[5]})
-
-        # Close the cursor that we created to the database and then close the
-        # database itself.
-        c.close()
-        conn.close()
-
-        if verbose: print 'res:', res
-        return res
-
-    def insert_index_ref(self, wordid, docid, line, column, branch_word):
-        # The supplied reference does not already exist in the table.
-        if not self.get_index_ref_info(where={
-            'wordid': wordid, 'docid': docid, 'line': line, 'column': column}):
-            # At this point, the user database must exist, so create a database
-            # connection to the file.
-            conn = sqlite3.connect(self.BASE_DIR + '/index.db')
-
+        # If the table does not exist in the database:
+        if not check_DB_exist(conn, '%s' % userid):
             # Create the cursor to preform the queries.
             c = conn.cursor()
 
-            c.execute("""insert into index_ref values
-                (NULL, ?, ?, ?, ?, ?)""",
-                (wordid, docid, line, column, branch_word))
+            # Create the index_ref table with the appropriate fields. The "id"
+            # field denotes the directory, not the name field.
+            c.execute("""create table %s (
+                id integer primary key autoincrement,
+                word text collate nocase
+            )""" % userid)
 
-            # Commit all the changes we have made to the application database.
+            # Commit all the changes we have made to the index database.
             conn.commit()
 
-            # Close the cursor that we created to the database and then close
-            # the database itself.
-            c.close()
-            conn.close()
-            return True
-        # The supplied reference already exist in the table.
-        else:
-            return False
+        # Close the cursor that we created to the database.
+        c.close()
+        return
 
     def print_DB(self, name):
         # At this point, the database must exist, so create a database
@@ -2287,28 +1322,79 @@ class DBManager():
             # Return the None-Type to indicate failure.
             return None
 
+    def insert_info(self, table, insert=[], verbose=False):
+        # At this point, the database must exist, so create a database
+        # connection to the file. The document database contains a larger
+        # percentage of the tables, so assume that the table is in the
+        # document database.
+        conn = sqlite3.connect(self.BASE_DIR + '/document.db')
+
+        # If the supplied table is not in the document database:
+        if not self.check_DB_exist(conn, table):
+            # Create a connection to the user database.
+            conn = sqlite3.connect(self.BASE_DIR + '/user.db')
+
+            # If the supplied table is not in the user database:
+            if not self.check_DB_exist(conn, table):
+                # Return the None type, indicating failure.
+                return None
+
+        # Set the datbase object to index results by column names.
+        conn.row_factory = sqlite3.Row
+        
+        # Create the cursor to preform the queries.
+        c = conn.cursor()
+
+        # If insert parameters were supplied:
+        if insert:
+            # Generate a list of all valid insertion parameters based on the
+            # supplied table.
+            valid = self.get_table_columns(c, table, verbose)
+            if verbose: print 'Valid Inputs:', valid
+            
+            # Find the keys that exist in the supplied searching dictionary, but
+            # not in the list of valid value keys.
+            minus = set(insert.keys()) - valid # [ item for item in insert.keys() if item not in valid]
+            if verbose: print 'Invalid keys:', minus
+
+            # If all the supplied keys are valid:
+            if not minus:
+                # Generate a fields string from the supplied update keys.
+                fields = ', '.join(insert.keys())[:-2]
+                
+                # Generate a query string from the supplied update keys.
+                query = '?, '.join(['' for i in range(len(insert.keys()))])[:-2]
+                
+                if verbose:
+                    print 'Fields:', fields, '\nValues:', insert.keys()
+                    print 'Query:', query, '\nValues:', insert.values()
+                
+                # Query the supplied table with the supplied parameters.
+                c.execute('insert into %s (%s) values (%s)' %
+                    (table, fields, query), insert.values())
+
+                # Commit the changes.
+                conn.commit()
+                
+                # Close the cursor to the database and then close the database.
+                c.close()
+                conn.close()
+
+                # Return true to denote success.
+                return True
+            
+        # Else no insertion parameters were supplied.
+        else:
+            # Return the None-Type to indicate failure.
+            return None
+
 if __name__ == "__main__":
     dbm = DBManager()
-#    dbm.print_userDB()
-#    print ''
-#    dbm.print_documentDB()
-#    print ''
-#    dbm.print_indexDB()
-#    q = {'username': 'admin'}
-#    s = ['email', 'infraction']
-#    print dbm.select_table_user(q, s)
-    #~ print dbm.get_user_info(where={'username': 'ash'}, verbose=True)
-    #~ import time
-    #~ a = 0
-    #~ for i in range(100):
-        #~ t1 = time.time()
-        #~ dbm.get_info('user', where={'username': 'ash'}, verbose=False)
-        #~ t2 = time.time()
-        #~ print 'time:', t2-t1
-        #~ a += t2-t1
-    dbm.print_DB('index')
-# set set = 5ms
-# set list = 5ms
-# list list = 5ms
-    #~ print 'Overall:', a/100
-#    dbm.print_userDB()
+    dbm.insert_info('user', insert={
+        'id': 'NULL',
+        'username': 'Gary',
+        'password': new('boss').hexdigest(),
+        'email': 'GOak@pokemon.com',
+        'usergroup': 2,
+        'infraction': 0}, verbose=True)
+    dbm.print_DB('user')

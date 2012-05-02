@@ -17,7 +17,7 @@ class User:
             self.info = self.manage_DB.get_user_info(userid=userid)
         # Search for the user information by username.
         elif username:
-            self.info = self.manage_DB.get_user_info(username=username)
+            self.info = self.manage_DB.get_user_info(where={'username': username})
         # Default user, Guest.
         else:
             self.info = self.manage_DB.get_user_info(userid=1)
@@ -40,64 +40,66 @@ class UserManager:
 
     def get_invitations_to(self, userid):
         # Query for all invitations to the supplied user.
-        self.c.execute("""select * from invitation where userid_to=?""",
-            (userid,))
-
-        # Return comments as a list.
+        rows = self.manage_Docs.get_invitation_info(where={'userid_to': userid})
+        
+        # Get the information for the supplied user.
+        usr_to = self.manage_DB.get_user_info(userid=userid)
+        
         res = []
-        for row in self.c:
+        for row in rows:
             # Get the information for the document the current invitation is
             # referencing to.
-            doc_info = self.manage_DB.get_document_info(row[1])
-            # Get the information for the user who sent the current invitation.
-            usr_info = self.manage_DB.get_user_info(row[2])
+            doc_info = self.manage_DB.get_document_info(row['docid'])
+            # Get the information for the user of the current invitation.
+            usr_from = self.manage_DB.get_user_info(row['userid_from'])
 
             # Determine the state of the invitation.
-            if row[6] == 1:
+            if row['status'] == 1:
                 status = 'Accepted'
-            elif row[6] == 0:
+            elif row['status'] == 0:
                 status = 'Pending'
             else:
                 status = 'Denied'
 
             # Create a dictionary with the results and add the dictionary to
             # the list.
-            res.append({'id': row[0], 'docid': doc_info['name'],
-                'userid_from': usr_info['username'],
-                'userid_to': self.info['username'], 'content': row[4],
-                'time': datetime.fromtimestamp(int(row[5])), 'status': status})
+            res.append({'id': row['id'], 'docid': doc_info['name'],
+                'userid_from': usr_from['username'],
+                'userid_to': usr_to['username'], 'content': row['content'],
+                'time': datetime.fromtimestamp(int(row['time'])), 'status': status})
 
         # Return the list of results.
         return res
 
     def get_invitations_from(self, userid):
-        # Query for all invitations from the supplied user.
-        self.c.execute("""select * from invitation where userid_from=?""",
-            (userid,))
-
-        # Return comments as a list.
+        # Query for all invitations to the supplied user.
+        rows = self.manage_Docs.get_invitation_info(where={'userid_from': userid})
+        
+        # Get the information for the supplied user.
+        usr_from = self.manage_DB.get_user_info(userid=userid)
+        
         res = []
-        for row in self.c:
+        for row in rows:
             # Get the information for the document the current invitation is
             # referencing to.
-            doc_info = self.manage_DB.get_document_info(row[1])
+            doc_info = self.manage_DB.get_document_info(row['docid'])
             # Get the information for the user of the current invitation.
-            usr_info = self.manage_DB.get_user_info(row[3])
+            usr_to = self.manage_DB.get_user_info(row['userid_from'])
 
             # Determine the state of the invitation.
-            if row[6] == 1:
+            if row['status'] == 1:
                 status = 'Accepted'
-            elif row[6] == 0:
+            elif row['status'] == 0:
                 status = 'Pending'
             else:
                 status = 'Denied'
 
             # Create a dictionary with the results and add the dictionary to
             # the list.
-            res.append({'id': row[0], 'docid': doc_info['name'],
-                'userid_from': self.info['username'],
-                'userid_to': usr_info['username'], 'content': row[4],
-                'time': datetime.fromtimestamp(int(row[5])), 'status': status})
+            res.append({'id': row['id'], 'docid': doc_info['name'],
+                'userid_from': usr_from['username'],
+                'userid_to': usr_to['username'], 'content': row['content'],
+                'time': datetime.fromtimestamp(int(row['time'])), 'status': status})
 
         # Return the list of results.
         return res

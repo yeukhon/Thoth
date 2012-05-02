@@ -4,6 +4,7 @@ from porter import PorterStemmer
 from sqlite3 import connect
 import os
 import re
+from datetime import datetime
 
 
 class Document:
@@ -173,50 +174,71 @@ class DocumentManager:
 
     def get_directory_documents(self, parent_dir):
         # Query for all the documents in the supplied directory.
-        self.c.execute("""select * from document where parent_dir=?""",
-            (parent_dir,))
-
+        rows = self.manage_DB.get_document_info(where={'parent_dir': parent_dir})
+        
+        # Get the information for the supplied parent directory.
+        dir_info = self.manage_DB.get_directory_info(parent_dir)
+        
         # Return comments as a list.
         res = []
-        for row in self.c:
+        for row in rows:
+            # Get the information for the owner of the document.
+            usr_info = self.manage_DB.get_user_info(row['owner'])
+            # get the information of the last mod user.
+            mod_info = self.manage_DB.get_user_info(row['last_mod_user'])
+            
             # Create a dictionary with the results and add the dictionary to
             # the list.
-            res.append({'id': row[0], 'name': row[1], 'parent_dir': row[2],
-                'owner': row[3], 'infraction': row[4],
-                'last_mod_user': row[5], 'last_mod_time': row[6],
-                'size': row[7]})
+            res.append({'id': row['id'], 'name': row['name'], 
+                'parent_dir': dir_info['name'], 'owner': usr_info['username'], 
+                'infraction': row['infraction'],
+                'mod_user': mod_info['username'], 
+                'mod_time': datetime.fromtimestamp(int(row['last_mod_time'])),
+                'size': row['size']})
 
         # Return the list of results.
         return res
 
     def get_document_comments(self, docid):
         # Query for all comments for the supplied document.
-        self.c.execute("""select * from comment where docid=?""",
-            (docid, ))
-
+        rows = self.manage_DB.get_comment_info(where={'docid': docid})
+        
+        # Get the information for the supplied document.
+        doc_info = self.manage_DB.get_document_info(docid)
+        
         # Return comments as a list.
         res = []
-        for row in self.c:
+        for row in rows:
+            # Get the information for the user that wrote the comment.
+            usr_info = self.manage_DB.get_user_info(row['userid'])
+            
             # Create a dictionary with the results and add the dictionary to
             # the list.
-            res.append({'id': row[0], 'docid': row[1], 'userid': row[2],
-                'content': row[3], 'time': row[4]})
+            res.append({'id': row['id'], 'doc': doc_info['name'], 
+                'user': usr_info['username'], 'content': row['content'], 
+                'time': datetime.fromtimestamp(int(row['time']))})
 
         # Return the list of results.
         return res
 
     def get_document_complaints(self, docid):
         # Query for all complaints for the supplied document.
-        self.c.execute("""select * from complaint where docid=?""",
-            (docid, ))
-
+        rows = self.manage_DB.get_complaint_info(docid)
+        
+        # Get the information for the supplied document.
+        doc_info = self.manage_DB.get_document_info(docid)
+        
         # Return comments as a list.
         res = []
-        for row in self.c:
+        for row in rows:
+            # Get the information for the user that wrote the comment.
+            usr_info = self.manage_DB.get_user_info(row['userid'])
+            
             # Create a dictionary with the results and add the dictionary to
             # the list.
-            res.append({'id': row[0], 'docid': row[1], 'userid': row[2],
-                'content': row[3], 'time': row[4]})
+            res.append({'id': row['id'], 'doc': doc_info['name'], 
+                'user': usr_info['username'], 'content': row['content'], 
+                'time': datetime.fromtimestamp(int(row['time']))})
 
         # Return the list of results.
         return res

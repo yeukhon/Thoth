@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Add a folder to the dB at the root directory.
     ash.manage_DB.insert_directory('Team')
     # Get the 'id' of the newly created directory.
-    teamid = ash.manage_DB.get_directory_info(name='Team')['id']
+    teamid = ash.manage_DB.get_directory_info(where={'name': 'Team'})[0]['id']
     # Create the directory.
     team = ash.manage_Dir.create_directory(teamid)
 
@@ -39,8 +39,8 @@ if __name__ == "__main__":
     ash.manage_DB.insert_document('Pikachu', teamid, ash.info['id'],
         infraction, last_mod_user, last_mod_time, size)
     # Get the 'id' of the newly created document.
-    pikaid = ash.manage_DB.get_document_info(
-        name='Pikachu', parent_dir=teamid)['id']
+    pikaid = ash.manage_DB.get_document_info(where={
+        'name': 'Pikachu', 'parent_dir': teamid})[0]['id']
     # Create the newly inserted document at the directory 'Team'.
     manage_Docs.create_document(pikaid, teamid)
     # Create an instance of the Document class for the newly created document.
