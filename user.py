@@ -14,17 +14,18 @@ class User:
 
         # Search for the user information by userid.
         if userid:
-            self.info = self.manage_DB.get_user_info(userid=userid)
+            self.info = self.manage_DB.get_info('user', rowid=userid)
         # Search for the user information by username.
         elif username:
-            self.info = self.manage_DB.get_user_info(where={'username': username})
+            self.info = self.manage_DB.get_info('user', where={
+                'username': username})
         # Default user, Guest.
         else:
-            self.info = self.manage_DB.get_user_info(userid=1)
+            self.info = self.manage_DB.get_info('user', rowid=1)
         return
 
     def update_user(self, userid):
-        self.info = self.manage_DB.get_user_info(userid)
+        self.info = self.manage_DB.get_info('user', rowid=userid)
         return
 
 
@@ -40,18 +41,20 @@ class UserManager:
 
     def get_invitations_to(self, userid):
         # Query for all invitations to the supplied user.
-        rows = self.manage_Docs.get_invitation_info(where={'userid_to': userid})
-        
+        rows = self.manage_DB.get_info('invitation', where={
+            'userid_to': userid})
+
         # Get the information for the supplied user.
-        usr_to = self.manage_DB.get_user_info(userid=userid)
-        
+        usr_to = self.manage_DB.get_info('user', rowid=userid)
+
+        # Initialize the list that will hold the results.
         res = []
         for row in rows:
             # Get the information for the document the current invitation is
             # referencing to.
-            doc_info = self.manage_DB.get_document_info(row['docid'])
+            doc_info = self.manage_DB.get_info('document', rowid=row['docid'])
             # Get the information for the user of the current invitation.
-            usr_from = self.manage_DB.get_user_info(row['userid_from'])
+            usr_from = self.manage_DB.get_info('user', rowid=row['userid_from'])
 
             # Determine the state of the invitation.
             if row['status'] == 1:
@@ -74,10 +77,10 @@ class UserManager:
     def get_invitations_from(self, userid):
         # Query for all invitations to the supplied user.
         rows = self.manage_Docs.get_invitation_info(where={'userid_from': userid})
-        
+
         # Get the information for the supplied user.
         usr_from = self.manage_DB.get_user_info(userid=userid)
-        
+
         res = []
         for row in rows:
             # Get the information for the document the current invitation is

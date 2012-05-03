@@ -15,7 +15,7 @@ class DirectoryManager:
 
     def get_directory_path(self, directoryid):
         # Get the information for the supplied directory.
-        res = self.manage_DB.get_directory_info(directoryid)
+        res = self.manage_DB.get_info('directory', rowid=directoryid)
 
         path_logical = ''
         path_physical = ''
@@ -26,7 +26,7 @@ class DirectoryManager:
             path_logical = '%s/%s' % (res['name'], path_logical)
             path_physical = '%s/%s' % (res['id'], path_physical)
             # Get the information for the parent directory.
-            res = self.manage_DB.get_directory_info(res['parent_dir'])
+            res = self.manage_DB.get_info('directory', rowid=res['parent_dir'])
 
         return path_logical, path_physical
 
@@ -45,15 +45,19 @@ class DirectoryManager:
 
     def get_directory_directories(self, directoryid):
         # Query for all the directories in the supplied directory.
-        self.c.execute("""select * from directory where parent_dir=?""",
-            (directoryid,))
+        res = self.manage_DB.get_info('directory', where={
+            'parent_dir': directoryid})
 
-        # Return directories as a list.
-        res = []
-        for row in self.c:
+        for row in res:
             # Create a dictionary with the results and add the dictionary to
             # the list.
-            res.append({'id': row[0], 'name': row[1], 'parent_dir': row[2]})
+            row['parent'] = self.manage_DB.get_info(
+                'directory', rowid=row['parent_dir'])['name']
 
         # Return the list of results.
         return res
+
+if __name__ == "__main__":
+    verbose = True
+    dm = DirectoryManager()
+    print dm.get_directory_directories(1)

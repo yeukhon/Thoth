@@ -17,7 +17,7 @@ class Document:
         self.conn = connect(self.BASE_DIR + '/document.db')
         self.c = self.conn.cursor()
 
-        self.info = self.manage_DB.get_document_info(ID)
+        self.info = self.manage_DB.get_info('document', rowid=ID)
 
         # Get the local and physical file system path for the document.
         path_logical, path_physical = self.manage_Docs.get_document_path(
@@ -147,14 +147,14 @@ class DocumentManager:
 
     def get_document_path(self, docid):
         # Get the information for the supplied document.
-        document = self.manage_DB.get_document_info(docid)
+        document = self.manage_DB.get_info('document', rowid=docid)
 
         # The supplied document exist.
         if document:
             # Get the information for the parent directory of the supplied
             # document.
-            res = self.manage_DB.get_directory_info(
-                document['parent_dir'])
+            res = self.manage_DB.get_info('directory',
+                rowid=document['parent_dir'])
 
             path_logical = ''
             path_physical = ''
@@ -165,7 +165,8 @@ class DocumentManager:
                 path_logical = '%s/%s' % (res['name'], path_logical)
                 path_physical = '%s/%s' % (res['id'], path_physical)
                 # Get the information for the parent directory.
-                res = self.manage_DB.get_directory_info(res['parent_dir'])
+                res = self.manage_DB.get_info('directory',
+                    rowid=res['parent_dir'])
 
             return path_logical, path_physical
         # The supplied document does not exist.
@@ -174,25 +175,27 @@ class DocumentManager:
 
     def get_directory_documents(self, parent_dir):
         # Query for all the documents in the supplied directory.
-        rows = self.manage_DB.get_document_info(where={'parent_dir': parent_dir})
-        
+        rows = self.manage_DB.get_info('document', where={
+            'parent_dir': parent_dir})
+
         # Get the information for the supplied parent directory.
-        dir_info = self.manage_DB.get_directory_info(parent_dir)
-        
+        dir_info = self.manage_DB.get_info('directory', rowid=parent_dir)
+
         # Return comments as a list.
         res = []
         for row in rows:
             # Get the information for the owner of the document.
-            usr_info = self.manage_DB.get_user_info(row['owner'])
+            usr_info = self.manage_DB.get_info('user', rowid=row['owner'])
             # get the information of the last mod user.
-            mod_info = self.manage_DB.get_user_info(row['last_mod_user'])
-            
+            mod_info = self.manage_DB.get_info('user',
+                rowid=row['last_mod_user'])
+
             # Create a dictionary with the results and add the dictionary to
             # the list.
-            res.append({'id': row['id'], 'name': row['name'], 
-                'parent_dir': dir_info['name'], 'owner': usr_info['username'], 
+            res.append({'id': row['id'], 'name': row['name'],
+                'parent_dir': dir_info['name'], 'owner': usr_info['username'],
                 'infraction': row['infraction'],
-                'mod_user': mod_info['username'], 
+                'mod_user': mod_info['username'],
                 'mod_time': datetime.fromtimestamp(int(row['last_mod_time'])),
                 'size': row['size']})
 
@@ -201,21 +204,21 @@ class DocumentManager:
 
     def get_document_comments(self, docid):
         # Query for all comments for the supplied document.
-        rows = self.manage_DB.get_comment_info(where={'docid': docid})
-        
+        rows = self.manage_DB.get_info('comment', where={'docid': docid})
+
         # Get the information for the supplied document.
-        doc_info = self.manage_DB.get_document_info(docid)
-        
+        doc_info = self.manage_DB.get_info('document', rowid=docid)
+
         # Return comments as a list.
         res = []
         for row in rows:
             # Get the information for the user that wrote the comment.
-            usr_info = self.manage_DB.get_user_info(row['userid'])
-            
+            usr_info = self.manage_DB.get_info('user', rowid=row['userid'])
+
             # Create a dictionary with the results and add the dictionary to
             # the list.
-            res.append({'id': row['id'], 'doc': doc_info['name'], 
-                'user': usr_info['username'], 'content': row['content'], 
+            res.append({'id': row['id'], 'doc': doc_info['name'],
+                'user': usr_info['username'], 'content': row['content'],
                 'time': datetime.fromtimestamp(int(row['time']))})
 
         # Return the list of results.
@@ -223,21 +226,21 @@ class DocumentManager:
 
     def get_document_complaints(self, docid):
         # Query for all complaints for the supplied document.
-        rows = self.manage_DB.get_complaint_info(docid)
-        
+        rows = self.manage_DB.get_info('complaint', where={'docid': docid})
+
         # Get the information for the supplied document.
-        doc_info = self.manage_DB.get_document_info(docid)
-        
+        doc_info = self.manage_DB.get_info('document', rowid=docid)
+
         # Return comments as a list.
         res = []
         for row in rows:
             # Get the information for the user that wrote the comment.
-            usr_info = self.manage_DB.get_user_info(row['userid'])
-            
+            usr_info = self.manage_DB.get_info('user', rowid=row['userid'])
+
             # Create a dictionary with the results and add the dictionary to
             # the list.
-            res.append({'id': row['id'], 'doc': doc_info['name'], 
-                'user': usr_info['username'], 'content': row['content'], 
+            res.append({'id': row['id'], 'doc': doc_info['name'],
+                'user': usr_info['username'], 'content': row['content'],
                 'time': datetime.fromtimestamp(int(row['time']))})
 
         # Return the list of results.
@@ -245,13 +248,14 @@ class DocumentManager:
 
     def is_member(self, docid, userid):
         # The supplied user is the owner of the supplied document.
-        res = self.manage_DB.get_document_info(docid)
+        res = self.manage_DB.get_info('document', rowid=docid)
         if res['owner'] == userid:
             return True
 
         # Search for a member entry with the supplied user for the supplied
         # document.
-        res = self.manage_DB.get_member_info(userid=userid, docid=docid)
+        res = self.manage_DB.get_info('member', where={
+            'userid': userid, 'docid': docid})
 
         # There exist a member entry for the supplied user.
         if res:
@@ -262,7 +266,7 @@ class DocumentManager:
 
     def index_document(self, docid):
         # Get the information for the supplied document.
-        document = self.manage_DB.get_document_info(docid)
+        document = self.manage_DB.get_info('document', rowid=docid)
 
         # Get the local file system path for the supplied document.
         path_logical, path_physical = self.get_document_path(docid)
