@@ -1154,6 +1154,33 @@ class Database(object):
             # Return false to indicate that the table was not created.
             return False
 
+    def init_table_autocomplete(self, conn):
+        """Create the index table in the usergroup database and insert the
+        default values.
+        @param  conn    The connection to the database."""
+        # Create the cursor to preform the queries.
+        c = conn.cursor()
+
+        # Check whether the user table does not exist in the database.
+        if self.check_DB_exist(conn, 'autocomplete'):
+            # Delete the table from the database.
+            c.execute("""delete from autocomplete""")
+            
+        # Create the autocomplete table with the appropriate fields. The "id"
+        # field denotes the directory, not the name field.
+        c.execute("""create table autocomplete (
+            id integer primary key autoincrement,
+            word text
+        )""")
+
+        # Commit all the changes we have made to the database and close the
+        # cursor.
+        conn.commit()
+        c.close()
+
+        # Return true to indicate that the table was created successfully.
+        return True
+
     def init_table_usrdic(self, userid):
         """Create the userid table in the usrdic database and insert the
         default values.

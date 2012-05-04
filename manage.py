@@ -114,15 +114,15 @@ class UserManager:
         rows = self.manage_DB.get_info('invitation', where={'userid_from': userid})
 
         # Get the information for the supplied user.
-        usr_from = self.manage.manage_DB.get_user_info(userid=userid)
+        usr_from = self.manage.manage_DB.get_info('user', rowid=userid)
 
         res = []
         for row in rows:
             # Get the information for the document the current invitation is
             # referencing to.
-            doc_info = self.manage_DB.get_document_info(row['docid'])
+            doc_info = self.manage_DB.ge_info('document', rowid=row['docid'])
             # Get the information for the user of the current invitation.
-            usr_to = self.manage_DB.get_user_info(row['userid_from'])
+            usr_to = self.manage_DB.get_info('user', row['userid_from'])
 
             # Determine the state of the invitation.
             if row['status'] == 1:
