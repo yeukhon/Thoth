@@ -5,7 +5,8 @@ from invitation_win import Invitation_Viewer_Window
 from application_win import App_Viewer_Window
 from login_win import Login_Window
 from textbox import TextBox
-from document import Document, DocumentManager
+from manage import DocumentManager
+from document import Document
 
 
 class Homepage:
@@ -13,8 +14,8 @@ class Homepage:
 
     def __init__(self, master, user):
         self.user = user
-        self.user.manage_DB.check()
-        self.manage_Docs = DocumentManager(self.user.manage_DB)
+        self.user.manage.manage_DB.check()
+        self.manage_Docs = DocumentManager(self.user.manage.manage_DB)
 
         # Child Windows:
         self.window_login = Login_Window(master, self, self.user)
@@ -197,10 +198,10 @@ class Homepage:
 
     def update_directory(self, directoryid):
         # Get the information for the supplied directory.
-        self.directory = self.user.manage_DB.get_directory_info(directoryid)
+        self.directory = self.user.manage.manage_DB.get_directory_info(directoryid)
 
         # Get a list of the directories in the supplied directory.
-        self.directory_dir = self.user.manage_Dir.get_directory_directories(
+        self.directory_dir = self.user.manage.manage_Dir.get_directory_directories(
             directoryid)
         # Get a list of the documents in the supplied directory.
         self.directory_doc = self.manage_Docs.get_directory_documents(
@@ -265,7 +266,7 @@ class Homepage:
             start += 1
 
         # Get the logical path for the supplied directory.
-        path_logical = self.user.manage_Dir.get_directory_path(
+        path_logical = self.user.manage.manage_Dir.get_directory_path(
             self.directory['id'])[0]
         # Set the Label to create a directory at the logical path.
         self.frame_create_banner_dir.config(
@@ -294,16 +295,16 @@ class Homepage:
             # Get the name of the directory the user wants to create.
             name = self.entry_dirname.get()
             # Insert a directory in the dB at the current directory.
-            res = self.user.manage_DB.insert_directory(
+            res = self.user.manage.manage_DB.insert_directory(
                 name, self.directory['id'])
 
             # The directory does not already exist in the dB.
             if res:
                 # Get the 'id' of the newly created directory.
-                newid = self.user.manage_DB.get_directory_info(
+                newid = self.user.manage.manage_DB.get_directory_info(
                     name=name, parent_dir=self.directory['id'])['id']
                 # Create the directory.
-                res = self.user.manage_Dir.create_directory(newid)
+                res = self.user.manage.manage_Dir.create_directory(newid)
 
                 # The directory does not already exist on the file system.
                 if res:
@@ -346,13 +347,13 @@ class Homepage:
             # Get the name of the document the user wants to create.
             name = self.entry_docname.get()
             # Insert a document in the dB at the current directory.
-            res = self.user.manage_DB.insert_document(
+            res = self.user.manage.manage_DB.insert_document(
                 name, self.directory['id'], self.user.info['id'], 0, 0, 0, 0)
 
             # The document does not already exist in the dB.
             if res:
                 # Get the 'id' of the newly created document.
-                newid = self.user.manage_DB.get_document_info(
+                newid = self.user.manage.manage_DB.get_document_info(
                     name=name, parent_dir=self.directory['id'])['id']
                 # Create the document.
                 res = self.manage_Docs.create_document(

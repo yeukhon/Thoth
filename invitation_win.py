@@ -61,7 +61,7 @@ class Invitation_Viewer_Window:
             text='Action')
         self.frame_pending_header_action.grid(row=0, column=4, columnspan=2)
 
-        res = self.user.manage_User.get_invitations_to(self.user.info['id'])
+        res = self.user.manage.manage_User.get_invitations_to(self.user.info['id'])
         start = 1
         self.pending_invitations = []
         for row in res:
@@ -132,7 +132,7 @@ class Invitation_Viewer_Window:
             text='Status')
         self.frame_sent_header_action.grid(row=0, column=4)
 
-        res = self.user.manage_User.get_invitations_from(self.user.info['id'])
+        res = self.user.manage.manage_User.get_invitations_from(self.user.info['id'])
         start = 1
         self.sent_invitations = []
         for row in res:

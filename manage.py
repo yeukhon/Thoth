@@ -111,10 +111,10 @@ class UserManager:
 
     def get_invitations_from(self, userid):
         # Query for all invitations to the supplied user.
-        rows = self.manage_DB_Docs.get_invitation_info(where={'userid_from': userid})
+        rows = self.manage_DB.get_info('invitation', where={'userid_from': userid})
 
         # Get the information for the supplied user.
-        usr_from = self.manage_DB.get_user_info(userid=userid)
+        usr_from = self.manage.manage_DB.get_user_info(userid=userid)
 
         res = []
         for row in rows:
