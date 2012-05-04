@@ -4,7 +4,7 @@ from sqlite3 import connect
 from datetime import datetime
 
 
-class User:
+class User(object):
     BASE_DIR = "dbs"
 
     def __init__(self, userid=0, username=''):
@@ -26,6 +26,13 @@ class User:
 
     def update_user(self, userid):
         self.info = self.manage_DB.get_info('user', rowid=userid)
+        return
+
+class RegularUser(User):
+    BASE_DIR = "dbs"
+
+    def __init__(self, userid=0, username=''):
+        super(RegularUser, self).__init__(userid=userid, username=username)
         return
 
 
@@ -109,13 +116,6 @@ class UserManager:
 
 
 if __name__ == "__main__":
-    lg = UserManager()
-#    lg.init_user()
-#    lg.get_all_user()
-#    lg.add_user("pent", "abc", "111@iii.com", 2)
-#    lg.get_all_user()
-#    lg.get_all_usergroup()
-#    print '\nAdmin ID: ', lg.get_user_id('admin')
-#    lg.close()
-    u = User(0)
-    print '\nInvitations: ', u.view_invitations_to()
+    um = UserManager(DBManager())
+    ash = RegularUser(2)
+    print ash.info
