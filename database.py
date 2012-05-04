@@ -24,7 +24,7 @@ from time import time
 from md5 import new
 
 
-class DBManager():
+class Database(object):
     BASE_DIR = "dbs"
     DOCS_DIR = "1"
 
