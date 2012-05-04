@@ -181,6 +181,7 @@ class Homepage:
             #self.filemenu.add_separator()
 	elif self.user.info['usergroup'] <= 2:	# superuser or normal user
 	    self.loginmenu.add_command(label="Logout", command=self.handler_view_logout)
+	    self.loginmenu.add_command(label="My Documents", command=self.handler_view_my_doc)
 	    self.menubar.add_cascade(label="My Account", menu=self.loginmenu)
 
         self.filemenu.add_command(label="Quit", command=self.file_exit)
@@ -405,11 +406,16 @@ class Homepage:
         return
 
     def handler_view_register(self):
-	pass
+	print 'register'
 
     def handler_view_logout(self):
-	pass
+	self.frame_cpanel_user.config(text='Visitor')
+	self.user.info['usergroup'] = 4
+	self.init_menus()
 
+    def handler_view_my_doc(self):
+	#self.frame.grid_remove()
+	pass
     def file_exit(self):
         """Clean-up before exiting a file."""
 
