@@ -1467,7 +1467,7 @@ class Database(object):
 
 if __name__ == "__main__":
     verbose = False
-    dbm = DBManager()
+    dbm = Database()
     # Insert User.
     dbm.insert_info('user', insert={
         'username': 'Gary',

@@ -18,20 +18,28 @@ class User(object):
         # If the userid was supplied:
         if userid:
             # Search for the user information by userid.
-            self.info = self.manage.get_info('user', rowid=userid)
+            res = self.manage.manage_DB.get_info('user', rowid=userid)
+            if res:
+                self.info = res
+            else:
+                return self.update_user()
         # Else if the username was supplied:
         elif username:
             # Search for the user information by username.
-            self.info = self.manage.get_info('user', where={
+            res = self.manage.manage_DB.get_info('user', where={
                 'username': username})
+            if res:
+                self.info = res[0]
+            else:
+                return self.update_user()
         # Else neither the userid nor the username was supplied:
         else:
             # Default user, Guest.
-            self.info = self.manage.get_info('user', rowid=1)
+            self.info = self.manage.manage_DB.get_info('user', rowid=1)
 
         # Set the information of the current user for the manager to be the
         # information that was just found. 
-        self.manage.update_user_info(self.info)
+        self.manage.manage_DB.update_user_info(self.info)
         return
 
 class RegularUser(User):
