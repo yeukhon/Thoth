@@ -1,5 +1,6 @@
 from database import Database
 from porter import PorterStemmer
+import os
 
 
 class Manager(object):
@@ -35,7 +36,7 @@ class DBManager(Database):
             self.user_info = super(DBManager, self).get_info('user', rowid=1)
         return
 
-    def update_user_info(info):
+    def update_user_info(self, info):
         # Set the current user information to the supplier information.
         self.user_info = info
         return

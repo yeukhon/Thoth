@@ -1,6 +1,4 @@
-from database import DBManager
-from index import IndexManager
-from porter import PorterStemmer
+from manage import Manager
 from sqlite3 import connect
 import os
 import re
@@ -11,8 +9,9 @@ class Document:
     BASE_DIR = "dbs"
 
     def __init__(self, ID):
-        self.manage_DB = DBManager()
-        self.manage_Docs = DocumentManager(self.manage_DB)
+        self.manage = Manager()
+        self.manage_DB = self.manage.manage_DB
+        self.manage_Docs = self.manage.manage_Docs
 
         self.conn = connect(self.BASE_DIR + '/document.db')
         self.c = self.conn.cursor()
@@ -122,9 +121,9 @@ if __name__ == '__main__':
 #    doc.insert_invitation(0, 0, 'Join Sucka!')
 #    doc.insert_comment(0, 'I a comment Sucka!')
 #    doc.insert_complaint(0, 'I haz complaints Sucka!')
-
-    manage_Docs = DocumentManager(DBManager())
-    manage_Docs.create_autocompleteDB(1, "Hello World!")
+	print 'put stuff'
+    #~ manage_Docs = DocumentManager(DBManager())
+    #~ manage_Docs.create_autocompleteDB(1, "Hello World!")
 #    docM.add_document('docname.txt', 1, 0, 1000)
 
 #    u = user.User(0)
