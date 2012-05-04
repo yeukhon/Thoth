@@ -87,4 +87,8 @@ class Login_Window:
     def handler_goto_homepage(self):
         self.frame.grid_remove()
         self.parent.frame.grid()
+	print dir(self.parent.menubar)
+	print self.parent.menubar.keys()
+	self.parent.menubar.destroy()
+	self.parent.init_menus()
         return
