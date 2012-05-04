@@ -198,11 +198,10 @@ class Homepage:
 
     def update_directory(self, directoryid):
         # Get the information for the supplied directory.
-        self.directory = self.user.manage.manage_DB.get_directory_info(directoryid)
+        self.directory = self.user.manage.manage_Dirs.get_directory_info(directoryid)
 
         # Get a list of the directories in the supplied directory.
-        self.directory_dir = self.user.manage.manage_Dir.get_directory_directories(
-            directoryid)
+        self.directory_dir = self.user.manage.manage_Dirs.get_directory_directories(directoryid)
         # Get a list of the documents in the supplied directory.
         self.directory_doc = self.manage_Docs.get_directory_documents(
             directoryid)
@@ -266,7 +265,7 @@ class Homepage:
             start += 1
 
         # Get the logical path for the supplied directory.
-        path_logical = self.user.manage.manage_Dir.get_directory_path(
+        path_logical = self.user.manage.manage_Dirs.get_directory_path(
             self.directory['id'])[0]
         # Set the Label to create a directory at the logical path.
         self.frame_create_banner_dir.config(
@@ -279,6 +278,7 @@ class Homepage:
     def open_document(self, docid):
         self.window_editor.initialize(self.user, Document(docid))
         self.frame.grid_remove()
+        self.init_menus()
         self.window_editor.frame.grid()
         return
 
@@ -422,6 +422,14 @@ class Homepage:
 
         self.quit()
         return
+
+    def show_help(self):
+    #self.frame.grid_remove()
+        pass
+
+    def show_about(self):
+    #self.frame.grid_remove()
+	    pass
 
 if __name__ == "__main__":
     root = Tk()

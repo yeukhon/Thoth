@@ -2,6 +2,7 @@ from Tkinter import *
 from sqlite3 import connect
 from user import User
 from md5 import new
+import tkMessageBox
 
 class Login_Window:
     BASE_DIR = 'dbs'
@@ -61,17 +62,18 @@ class Login_Window:
         password = new(self.password.get()).hexdigest()
 
         # Get the information for the supplied username.
-        res = self.user.manage_DB.get_user_info(
-            username=name)
+        res = self.user.manage.manage_DB.get_info('user', where={'username': name, 'password': password})
 
         # The supplied username is in the database.
         if res:
+            res = res[-1]
             # The supplied password matches the password in the database.
             if res['password'] == password:
                 # Update the User instance with the new user information.
                 self.parent.user.update_user(res['id'])
                 self.parent.frame_cpanel_user.config(text=res['username'])
                 # Display the homepage.
+                tkMessageBox.showinfo('Authenticated', 'Welcome back! You are logged in as %s.' % res['username'])
                 self.handler_goto_homepage()
             # The supplied password does not match the password in the database.
             else:
@@ -82,6 +84,7 @@ class Login_Window:
             # Reset the username and password field.
             self.username.set('')
             self.password.set('')
+            tkMessageBox.showerror('Login Failed', 'Authentication failed. Please try again.')
         return
 
     def handler_goto_homepage(self):

@@ -61,7 +61,7 @@ class App_Viewer_Window:
             text='Action')
         self.frame_pending_header_action.grid(row=0, column=4, columnspan=2)
 
-        res = self.manage_App.view_applications_pending()
+        res = [{'username': 'my_name', 'email': 'g@g.com', 'time': 'Dec 06, 2011', 'content': 'abcdef'}]#self.manage_App.view_applications_pending()
         start = 1
         self.pending_invitations = []
         for row in res:

@@ -1,6 +1,7 @@
 from database import Database
 from porter import PorterStemmer
 import os
+from datetime import datetime
 
 
 class Manager(object):
@@ -114,7 +115,7 @@ class UserManager:
         rows = self.manage_DB.get_info('invitation', where={'userid_from': userid})
 
         # Get the information for the supplied user.
-        usr_from = self.manage.manage_DB.get_info('user', rowid=userid)
+        usr_from = self.manage_DB.get_info('user', rowid=userid)
 
         res = []
         for row in rows:
@@ -203,20 +204,25 @@ class DocumentManager:
         # Return comments as a list.
         res = []
         for row in rows:
+            
             # Get the information for the owner of the document.
             usr_info = self.manage_DB.get_info('user', rowid=row['owner'])
+            #print usr_info
             # get the information of the last mod user.
-            mod_info = self.manage_DB.get_info('user',
-                rowid=row['last_mod_user'])
+            #mod_info = self.manage_DB.get_info('user',
+            #    rowid=row['last_mod_user'])
+            
 
             # Create a dictionary with the results and add the dictionary to
             # the list.
             res.append({'id': row['id'], 'name': row['name'],
                 'parent_dir': dir_info['name'], 'owner': usr_info['username'],
                 'infraction': row['infraction'],
-                'mod_user': mod_info['username'],
                 'mod_time': datetime.fromtimestamp(int(row['last_mod_time'])),
                 'size': row['size']})
+            if row['last_mod_user'] > 0:
+                mod_info = self.manage_DB.get_info('user', rowid=row['last_mod_user'])
+                res[-1]['mod_user'] = mod_info['username']
 
         # Return the list of results.
         return res
@@ -306,6 +312,9 @@ class DirectoryManager:
             res = self.manage_DB.get_info('directory', rowid=res['parent_dir'])
 
         return path_logical, path_physical
+    def get_directory_info(self, directoryid):
+        res = self.manage_DB.get_info('directory', rowid=directoryid)
+        return res
 
     def create_directory(self, directoryid):
         # Get the local file system path for the supplied directory.
