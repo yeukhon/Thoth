@@ -43,10 +43,9 @@ class Homepage:
         self.init_frame_cpanel()
         self.update_directory(1)
 
-        self.frame_dir.grid(row=0, column=0, sticky=N + E + S + W)
-        self.frame_create.grid(row=1, column=0, sticky=N + E + S + W)
-        self.frame_cpanel.grid(row=0, column=1, rowspan=2,
-            sticky=N + E + S + W)
+        self.frame_dir.grid(row=0, column=0, sticky=N + E + S + W, padx="20px", pady="10px")
+        self.frame_create.grid(row=1, column=0, sticky=N + E + S + W, padx="20px", pady="10px")
+        self.frame_cpanel.grid(row=0, column=1, rowspan=2, sticky=N + E + S + W, padx="20px", pady="10px")
 
         return
 
@@ -173,12 +172,24 @@ class Homepage:
 
         # File Pulldown menu, contains "Open", "Save", and "Exit" options.
         self.filemenu = Menu(self.menubar, tearoff=0)
-        if self.user.info['usergroup'] == 4:
-            self.filemenu.add_command(label="Login",
-            command=self.handler_view_login)
-            self.filemenu.add_separator()
-        self.filemenu.add_command(label="Exit", command=self.file_exit)
+	self.loginmenu = Menu(self.menubar, tearoff=0)
+
+	if self.user.info['usergroup'] == 4:
+            self.loginmenu.add_command(label="Login", command=self.handler_view_login)
+            self.loginmenu.add_command(label="Register", command=self.handler_view_register)
+	    self.menubar.add_cascade(label="Login/Register", menu=self.loginmenu)
+            #self.filemenu.add_separator()
+	elif self.user.info['usergroup'] <= 2:	# superuser or normal user
+	    self.loginmenu.add_command(label="Logout", command=self.handler_view_logout)
+	    self.menubar.add_cascade(label="My Account", menu=self.loginmenu)
+
+        self.filemenu.add_command(label="Quit", command=self.file_exit)
         self.menubar.add_cascade(label="File", menu=self.filemenu)
+
+	self.helpmenu = Menu(self.menubar, tearoff=0)
+	self.helpmenu.add_command(label="Get Help", command=self.show_help)
+	self.helpmenu.add_command(label="About", command=self.show_about)
+	self.menubar.add_cascade(label="Help", menu=self.helpmenu)
 
         self.top["menu"] = self.menubar
         return
@@ -387,10 +398,17 @@ class Homepage:
         return
 
     def handler_view_login(self):
-        self.top["menu"] = 0
-        self.frame.grid_remove()
+        #self.top["menu"] = 0
+        #self.frame.grid_remove()
+	#self.init_menus()
         self.window_login.frame.grid()
         return
+
+    def handler_view_register(self):
+	pass
+
+    def handler_view_logout(self):
+	pass
 
     def file_exit(self):
         """Clean-up before exiting a file."""
